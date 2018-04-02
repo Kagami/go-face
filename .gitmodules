@@ -1,0 +1,3 @@
+[submodule "testdata"]
+	path = testdata
+	url = https://github.com/Kagami/go-dlib-testdata.git
