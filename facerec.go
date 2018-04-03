@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	DESCR_LEN = 128
+	descrLen = 128
 )
 
 // Preinitialized extractor.
@@ -17,7 +17,7 @@ type FaceRec struct {
 }
 
 // Descriptor alias.
-type Descriptor [DESCR_LEN]float32
+type FaceDescriptor [descrLen]float32
 
 func NewFaceRec(modelDir string) (rec *FaceRec, err error) {
 	cModelDir := C.CString(modelDir)
@@ -35,7 +35,7 @@ func NewFaceRec(modelDir string) (rec *FaceRec, err error) {
 	return
 }
 
-func (rec *FaceRec) getDescriptors(imgPath string, maxFaces int) (ds []Descriptor, err error) {
+func (rec *FaceRec) getDescriptors(imgPath string, maxFaces int) (ds []FaceDescriptor, err error) {
 	cImgPath := C.CString(imgPath)
 	defer C.free(unsafe.Pointer(cImgPath))
 	ret := C.facerec_recognize(rec.p, cImgPath, C.int(maxFaces))
@@ -55,19 +55,19 @@ func (rec *FaceRec) getDescriptors(imgPath string, maxFaces int) (ds []Descripto
 
 	// Copy descriptor data to Go structure.
 	defer C.free(unsafe.Pointer(ret.descriptors))
-	dataLen := numFaces * DESCR_LEN
+	dataLen := numFaces * descrLen
 	dataPtr := unsafe.Pointer(ret.descriptors)
 	data := (*[1 << 30]float32)(dataPtr)[:dataLen:dataLen]
 	for i := 0; i < numFaces; i++ {
-		var d Descriptor
-		copy(d[:], data[i*DESCR_LEN:(i+1)*DESCR_LEN])
+		var d FaceDescriptor
+		copy(d[:], data[i*descrLen:(i+1)*descrLen])
 		ds = append(ds, d)
 	}
 	return
 }
 
-// Get face descriptor if image has single face or nil otherwise.
-func (rec *FaceRec) GetDescriptor(imgPath string) (d *Descriptor, err error) {
+// Get descriptor if image has single face or nil otherwise.
+func (rec *FaceRec) GetDescriptor(imgPath string) (d *FaceDescriptor, err error) {
 	ds, err := rec.getDescriptors(imgPath, 1)
 	if err != nil {
 		return
@@ -79,10 +79,10 @@ func (rec *FaceRec) GetDescriptor(imgPath string) (d *Descriptor, err error) {
 	return
 }
 
-// Get face descriptors from the provided image file.
+// Get descriptors from the provided image file.
 // Empty list is returned if there are no faces, error is returned if
 // there was some error while decoding/processing image.
-func (rec *FaceRec) GetDescriptors(imgPath string) (ds []Descriptor, err error) {
+func (rec *FaceRec) GetDescriptors(imgPath string) (ds []FaceDescriptor, err error) {
 	return rec.getDescriptors(imgPath, 0)
 }
 
