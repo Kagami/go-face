@@ -51,12 +51,14 @@ public:
 	}
 
 	// TODO(Kagami): Jittering?
-	std::vector<descriptor> Recognize(const char* img_path) {
+	std::vector<descriptor> Recognize(const char* img_path, int max_faces) {
 		matrix<rgb_pixel> img;
 		load_image(img, img_path);
 
 		std::vector<matrix<rgb_pixel>> faces;
 		for (auto face : detector_(img)) {
+			if (max_faces && faces.size() >= max_faces)
+				return {};
 			auto shape = sp_(img, face);
 			matrix<rgb_pixel> face_chip;
 			extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
@@ -93,11 +95,11 @@ facerec* facerec_init(const char* model_dir) {
 	return rec;
 }
 
-faceret* facerec_recognize(facerec* rec, const char* img_path) {
+faceret* facerec_recognize(facerec* rec, const char* img_path, int max_faces) {
 	faceret* ret = (faceret*)calloc(1, sizeof(faceret));
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	try {
-		std::vector<descriptor> descriptors = cls->Recognize(img_path);
+		std::vector<descriptor> descriptors = cls->Recognize(img_path, max_faces);
 		ret->num_faces = descriptors.size();
 		if (ret->num_faces == 0)
 			return ret;

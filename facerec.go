@@ -16,10 +16,8 @@ type FaceRec struct {
 	p *_Ctype_struct_facerec
 }
 
-// Face structure.
-type Face struct {
-	Descriptor [DESCR_LEN]float32
-}
+// Descriptor alias.
+type Descriptor [DESCR_LEN]float32
 
 func NewFaceRec(modelDir string) (rec *FaceRec, err error) {
 	cModelDir := C.CString(modelDir)
@@ -37,13 +35,10 @@ func NewFaceRec(modelDir string) (rec *FaceRec, err error) {
 	return
 }
 
-// Extract faces from the provided image file.
-// Empty list is returned if there are no faces, error is returned if
-// there was some error while decoding/processing image.
-func (rec *FaceRec) Recognize(imgPath string) (faces []*Face, err error) {
+func (rec *FaceRec) getDescriptors(imgPath string, maxFaces int) (ds []Descriptor, err error) {
 	cImgPath := C.CString(imgPath)
 	defer C.free(unsafe.Pointer(cImgPath))
-	ret := C.facerec_recognize(rec.p, cImgPath)
+	ret := C.facerec_recognize(rec.p, cImgPath, C.int(maxFaces))
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -64,11 +59,31 @@ func (rec *FaceRec) Recognize(imgPath string) (faces []*Face, err error) {
 	dataPtr := unsafe.Pointer(ret.descriptors)
 	data := (*[1 << 30]float32)(dataPtr)[:dataLen:dataLen]
 	for i := 0; i < numFaces; i++ {
-		var face Face
-		copy(face.Descriptor[:], data[i*DESCR_LEN:(i+1)*DESCR_LEN])
-		faces = append(faces, &face)
+		var d Descriptor
+		copy(d[:], data[i*DESCR_LEN:(i+1)*DESCR_LEN])
+		ds = append(ds, d)
 	}
 	return
+}
+
+// Get face descriptor if image has single face or nil otherwise.
+func (rec *FaceRec) GetDescriptor(imgPath string) (d *Descriptor, err error) {
+	ds, err := rec.getDescriptors(imgPath, 1)
+	if err != nil {
+		return
+	}
+	if len(ds) != 1 {
+		return
+	}
+	d = &ds[0]
+	return
+}
+
+// Get face descriptors from the provided image file.
+// Empty list is returned if there are no faces, error is returned if
+// there was some error while decoding/processing image.
+func (rec *FaceRec) GetDescriptors(imgPath string) (ds []Descriptor, err error) {
+	return rec.getDescriptors(imgPath, 0)
 }
 
 func (rec *FaceRec) Close() {
