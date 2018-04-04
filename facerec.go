@@ -1,6 +1,7 @@
 package dlib
 
 // #include <stdlib.h>
+// #include <stdint.h>
 // #include "facerec.h"
 import "C"
 import (
@@ -8,6 +9,7 @@ import (
 )
 
 const (
+	rectLen  = 4
 	descrLen = 128
 )
 
@@ -18,12 +20,9 @@ type FaceRec struct {
 
 // Face structure.
 type Face struct {
-	Rectangle  [4]int32
-	Descriptor FaceDescriptor
+	Rectangle  [rectLen]int32
+	Descriptor [descrLen]float32
 }
-
-// Descriptor alias.
-type FaceDescriptor [descrLen]float32
 
 func NewFaceRec(modelDir string) (rec *FaceRec, err error) {
 	cModelDir := C.CString(modelDir)
@@ -63,9 +62,9 @@ func (rec *FaceRec) recognize(imgPath string, maxFaces int) (faces []Face, err e
 	defer C.free(unsafe.Pointer(ret.rectangles))
 	defer C.free(unsafe.Pointer(ret.descriptors))
 
-	rDataLen := numFaces * 4
+	rDataLen := numFaces * rectLen
 	rDataPtr := unsafe.Pointer(ret.rectangles)
-	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
+	rData := (*[1 << 30]int32)(rDataPtr)[:rDataLen:rDataLen]
 
 	dDataLen := numFaces * descrLen
 	dDataPtr := unsafe.Pointer(ret.descriptors)
@@ -73,10 +72,7 @@ func (rec *FaceRec) recognize(imgPath string, maxFaces int) (faces []Face, err e
 
 	for i := 0; i < numFaces; i++ {
 		face := Face{}
-		face.Rectangle[0] = int32(rData[i*4])
-		face.Rectangle[1] = int32(rData[i*4+1])
-		face.Rectangle[2] = int32(rData[i*4+2])
-		face.Rectangle[3] = int32(rData[i*4+3])
+		copy(face.Rectangle[:], rData[i*rectLen:(i+1)*rectLen])
 		copy(face.Descriptor[:], dData[i*descrLen:(i+1)*descrLen])
 		faces = append(faces, face)
 	}
