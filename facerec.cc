@@ -108,9 +108,9 @@ faceret* facerec_recognize(facerec* rec, const char* img_path, int max_faces) {
 		ret->num_faces = descrs.size();
 		if (ret->num_faces == 0)
 			return ret;
-		ret->rectangles = (int32_t*)malloc(ret->num_faces * RECT_SIZE);
+		ret->rectangles = (long*)malloc(ret->num_faces * RECT_SIZE);
 		for (int i = 0; i < ret->num_faces; i++) {
-			int32_t* dst = ret->rectangles + i * 4;
+			long* dst = ret->rectangles + i * 4;
 			dst[0] = rects[i].left();
 			dst[1] = rects[i].top();
 			dst[2] = rects[i].right();

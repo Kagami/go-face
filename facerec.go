@@ -5,6 +5,7 @@ package dlib
 // #include "facerec.h"
 import "C"
 import (
+	"image"
 	"unsafe"
 )
 
@@ -20,7 +21,7 @@ type FaceRec struct {
 
 // Face structure.
 type Face struct {
-	Rectangle  [rectLen]int32
+	Rectangle  image.Rectangle
 	Descriptor [descrLen]float32
 }
 
@@ -64,7 +65,7 @@ func (rec *FaceRec) recognize(imgPath string, maxFaces int) (faces []Face, err e
 
 	rDataLen := numFaces * rectLen
 	rDataPtr := unsafe.Pointer(ret.rectangles)
-	rData := (*[1 << 30]int32)(rDataPtr)[:rDataLen:rDataLen]
+	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	dDataLen := numFaces * descrLen
 	dDataPtr := unsafe.Pointer(ret.descriptors)
@@ -72,7 +73,11 @@ func (rec *FaceRec) recognize(imgPath string, maxFaces int) (faces []Face, err e
 
 	for i := 0; i < numFaces; i++ {
 		face := Face{}
-		copy(face.Rectangle[:], rData[i*rectLen:(i+1)*rectLen])
+		x0 := int(rData[i*rectLen])
+		y0 := int(rData[i*rectLen+1])
+		x1 := int(rData[i*rectLen+2])
+		y1 := int(rData[i*rectLen+3])
+		face.Rectangle = image.Rect(x0, y0, x1, y1)
 		copy(face.Descriptor[:], dData[i*descrLen:(i+1)*descrLen])
 		faces = append(faces, face)
 	}

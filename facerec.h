@@ -19,7 +19,7 @@ typedef struct facerec {
 
 typedef struct faceret {
 	int num_faces;
-	int32_t* rectangles;
+	long* rectangles;
 	float* descriptors;
 	const char* err_str;
 	err_code err_code;
