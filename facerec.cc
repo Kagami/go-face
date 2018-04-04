@@ -61,7 +61,7 @@ public:
 		std::vector<descriptor> descrs;
 
 		// Short circuit.
-		if (rects.size() == 0 || max_faces && rects.size() >= max_faces)
+		if (rects.size() == 0 || (max_faces && rects.size() > max_faces))
 			return {rects, descrs};
 
 		std::vector<matrix<rgb_pixel>> face_imgs;
