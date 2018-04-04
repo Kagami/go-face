@@ -35,6 +35,8 @@ using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
                             >>>>>>>>>>>>;
 
 typedef matrix<float,0,1> descriptor;
+typedef std::pair<std::vector<rectangle>, std::vector<descriptor>> faces;
+static const size_t RECT_SIZE = 4 * sizeof(long);
 static const size_t DESCR_SIZE = 128 * sizeof(float);
 
 class FaceRec {
@@ -51,26 +53,27 @@ public:
 	}
 
 	// TODO(Kagami): Jittering?
-	std::vector<descriptor> Recognize(const char* img_path, int max_faces) {
+	faces Recognize(const char* img_path, int max_faces) {
 		matrix<rgb_pixel> img;
 		load_image(img, img_path);
 
-		std::vector<matrix<rgb_pixel>> faces;
-		for (auto face : detector_(img)) {
-			if (max_faces && faces.size() >= max_faces)
-				return {};
-			auto shape = sp_(img, face);
-			matrix<rgb_pixel> face_chip;
-			extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
-			faces.push_back(std::move(face_chip));
-		}
+		std::vector<rectangle> rects = detector_(img);
+		std::vector<descriptor> descrs;
 
 		// Short circuit.
-		if (faces.size() == 0)
-			return {};
+		if (rects.size() == 0 || max_faces && rects.size() >= max_faces)
+			return {rects, descrs};
 
-		std::vector<descriptor> descriptors = net_(faces);
-		return descriptors;
+		std::vector<matrix<rgb_pixel>> face_imgs;
+		for (auto rect : rects) {
+			auto shape = sp_(img, rect);
+			matrix<rgb_pixel> face_chip;
+			extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
+			face_imgs.push_back(std::move(face_chip));
+		}
+
+		descrs = net_(face_imgs);
+		return {rects, descrs};
 	}
 private:
 	frontal_face_detector detector_;
@@ -99,14 +102,24 @@ faceret* facerec_recognize(facerec* rec, const char* img_path, int max_faces) {
 	faceret* ret = (faceret*)calloc(1, sizeof(faceret));
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	try {
-		std::vector<descriptor> descriptors = cls->Recognize(img_path, max_faces);
-		ret->num_faces = descriptors.size();
+		faces faces = cls->Recognize(img_path, max_faces);
+		std::vector<rectangle> rects = faces.first;
+		std::vector<descriptor> descrs = faces.second;
+		ret->num_faces = descrs.size();
 		if (ret->num_faces == 0)
 			return ret;
+		ret->rectangles = (long*)malloc(ret->num_faces * RECT_SIZE);
+		for (int i = 0; i < ret->num_faces; i++) {
+			long* dst = ret->rectangles + i * 4;
+			dst[0] = rects[i].left();
+			dst[1] = rects[i].top();
+			dst[2] = rects[i].right();
+			dst[3] = rects[i].bottom();
+		}
 		ret->descriptors = (float*)malloc(ret->num_faces * DESCR_SIZE);
 		for (int i = 0; i < ret->num_faces; i++) {
 			void* dst = (uint8_t*)(ret->descriptors) + i * DESCR_SIZE;
-			void* src = (void*)&descriptors[i](0,0);
+			void* src = (void*)&descrs[i](0,0);
 			memcpy(dst, src, DESCR_SIZE);
 		}
 	} catch(image_load_error& e) {

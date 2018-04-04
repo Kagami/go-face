@@ -16,6 +16,12 @@ type FaceRec struct {
 	p *_Ctype_struct_facerec
 }
 
+// Face structure.
+type Face struct {
+	Rectangle  [4]int32
+	Descriptor FaceDescriptor
+}
+
 // Descriptor alias.
 type FaceDescriptor [descrLen]float32
 
@@ -35,7 +41,7 @@ func NewFaceRec(modelDir string) (rec *FaceRec, err error) {
 	return
 }
 
-func (rec *FaceRec) getDescriptors(imgPath string, maxFaces int) (ds []FaceDescriptor, err error) {
+func (rec *FaceRec) recognize(imgPath string, maxFaces int) (faces []Face, err error) {
 	cImgPath := C.CString(imgPath)
 	defer C.free(unsafe.Pointer(cImgPath))
 	ret := C.facerec_recognize(rec.p, cImgPath, C.int(maxFaces))
@@ -53,37 +59,48 @@ func (rec *FaceRec) getDescriptors(imgPath string, maxFaces int) (ds []FaceDescr
 		return
 	}
 
-	// Copy descriptor data to Go structure.
+	// Copy faces data to Go structure.
+	defer C.free(unsafe.Pointer(ret.rectangles))
 	defer C.free(unsafe.Pointer(ret.descriptors))
-	dataLen := numFaces * descrLen
-	dataPtr := unsafe.Pointer(ret.descriptors)
-	data := (*[1 << 30]float32)(dataPtr)[:dataLen:dataLen]
+
+	rDataLen := numFaces * 4
+	rDataPtr := unsafe.Pointer(ret.rectangles)
+	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
+
+	dDataLen := numFaces * descrLen
+	dDataPtr := unsafe.Pointer(ret.descriptors)
+	dData := (*[1 << 30]float32)(dDataPtr)[:dDataLen:dDataLen]
+
 	for i := 0; i < numFaces; i++ {
-		var d FaceDescriptor
-		copy(d[:], data[i*descrLen:(i+1)*descrLen])
-		ds = append(ds, d)
+		face := Face{}
+		face.Rectangle[0] = int32(rData[i*4])
+		face.Rectangle[1] = int32(rData[i*4+1])
+		face.Rectangle[2] = int32(rData[i*4+2])
+		face.Rectangle[3] = int32(rData[i*4+3])
+		copy(face.Descriptor[:], dData[i*descrLen:(i+1)*descrLen])
+		faces = append(faces, face)
 	}
 	return
 }
 
-// Get descriptor if image has single face or nil otherwise.
-func (rec *FaceRec) GetDescriptor(imgPath string) (d *FaceDescriptor, err error) {
-	ds, err := rec.getDescriptors(imgPath, 1)
+// Recognize all image faces.
+// Empty list is returned if there are no faces, error is returned if
+// there was some error while decoding/processing image.
+func (rec *FaceRec) Recognize(imgPath string) (faces []Face, err error) {
+	return rec.recognize(imgPath, 0)
+}
+
+// Recognize if image has single face or return nil otherwise.
+func (rec *FaceRec) RecognizeSingle(imgPath string) (face *Face, err error) {
+	faces, err := rec.recognize(imgPath, 1)
 	if err != nil {
 		return
 	}
-	if len(ds) != 1 {
+	if len(faces) != 1 {
 		return
 	}
-	d = &ds[0]
+	face = &faces[0]
 	return
-}
-
-// Get descriptors from the provided image file.
-// Empty list is returned if there are no faces, error is returned if
-// there was some error while decoding/processing image.
-func (rec *FaceRec) GetDescriptors(imgPath string) (ds []FaceDescriptor, err error) {
-	return rec.getDescriptors(imgPath, 0)
 }
 
 func (rec *FaceRec) Close() {

@@ -18,8 +18,9 @@ typedef struct facerec {
 } facerec;
 
 typedef struct faceret {
-	float* descriptors;
 	int num_faces;
+	long* rectangles;
+	float* descriptors;
 	const char* err_str;
 	err_code err_code;
 } faceret;

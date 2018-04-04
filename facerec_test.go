@@ -10,11 +10,11 @@ func TestNumFaces(t *testing.T) {
 		t.Fatalf("Can't init face recognizer: %v", err)
 	}
 	defer rec.Close()
-	ds, err := rec.GetDescriptors("testdata/pristin.jpg")
+	faces, err := rec.Recognize("testdata/pristin.jpg")
 	if err != nil {
-		t.Fatalf("Can't get descriptors: %v", err)
+		t.Fatalf("Can't get faces: %v", err)
 	}
-	numFaces := len(ds)
+	numFaces := len(faces)
 	if err != nil || numFaces != 10 {
 		t.Fatalf("Wrong number of faces: %d", numFaces)
 	}
