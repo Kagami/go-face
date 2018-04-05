@@ -6,6 +6,8 @@ package dlib
 import "C"
 import (
 	"image"
+	"io/ioutil"
+	"os"
 	"unsafe"
 )
 
@@ -41,10 +43,15 @@ func NewFaceRec(modelDir string) (rec *FaceRec, err error) {
 	return
 }
 
-func (rec *FaceRec) recognize(imgPath string, maxFaces int) (faces []Face, err error) {
-	cImgPath := C.CString(imgPath)
-	defer C.free(unsafe.Pointer(cImgPath))
-	ret := C.facerec_recognize(rec.p, cImgPath, C.int(maxFaces))
+func (rec *FaceRec) recognize(imgData []byte, maxFaces int) (faces []Face, err error) {
+	if len(imgData) == 0 {
+		err = ImageLoadError("Empty image")
+		return
+	}
+	cImgData := (*C.uchar)(&imgData[0])
+	cLen := C.int(len(imgData))
+	cMaxFaces := C.int(maxFaces)
+	ret := C.facerec_recognize(rec.p, cImgData, cLen, cMaxFaces)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -84,20 +91,43 @@ func (rec *FaceRec) recognize(imgPath string, maxFaces int) (faces []Face, err e
 	return
 }
 
-// Recognize all image faces.
-// Empty list is returned if there are no faces, error is returned if
-// there was some error while decoding/processing image.
-func (rec *FaceRec) Recognize(imgPath string) (faces []Face, err error) {
-	return rec.recognize(imgPath, 0)
-}
-
-// Recognize if image has single face or return nil otherwise.
-func (rec *FaceRec) RecognizeSingle(imgPath string) (face *Face, err error) {
-	faces, err := rec.recognize(imgPath, 1)
+// Convenient method.
+func (rec *FaceRec) recognizeFile(imgPath string, maxFaces int) (face []Face, err error) {
+	fd, err := os.Open(imgPath)
 	if err != nil {
 		return
 	}
-	if len(faces) != 1 {
+	imgData, err := ioutil.ReadAll(fd)
+	if err != nil {
+		return
+	}
+	return rec.recognize(imgData, maxFaces)
+}
+
+// Recognize all image faces.
+// Empty list is returned if there are no faces, error is returned if
+// there was some error while decoding/processing image.
+func (rec *FaceRec) Recognize(imgData []byte) (faces []Face, err error) {
+	return rec.recognize(imgData, 0)
+}
+
+// Recognize if image has single face or return nil otherwise.
+func (rec *FaceRec) RecognizeSingle(imgData []byte) (face *Face, err error) {
+	faces, err := rec.recognize(imgData, 1)
+	if err != nil || len(faces) != 1 {
+		return
+	}
+	face = &faces[0]
+	return
+}
+
+func (rec *FaceRec) RecognizeFile(imgPath string) (faces []Face, err error) {
+	return rec.recognizeFile(imgPath, 0)
+}
+
+func (rec *FaceRec) RecognizeSingleFile(imgPath string) (face *Face, err error) {
+	faces, err := rec.recognizeFile(imgPath, 1)
+	if err != nil || len(faces) != 1 {
 		return
 	}
 	face = &faces[0]

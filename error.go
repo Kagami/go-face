@@ -16,12 +16,6 @@ func (e SerializationError) Error() string {
 	return string(e)
 }
 
-type RecognizeError string
-
-func (e RecognizeError) Error() string {
-	return string(e)
-}
-
 type UnknownError string
 
 func (e UnknownError) Error() string {
@@ -35,8 +29,6 @@ func makeError(s string, code int) error {
 		return ImageLoadError(s)
 	case C.SERIALIZATION_ERROR:
 		return SerializationError(s)
-	case C.RECOGNIZE_ERROR:
-		return RecognizeError(s)
 	default:
 		return UnknownError(s)
 	}

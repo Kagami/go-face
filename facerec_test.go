@@ -10,7 +10,7 @@ func TestNumFaces(t *testing.T) {
 		t.Fatalf("Can't init face recognizer: %v", err)
 	}
 	defer rec.Close()
-	faces, err := rec.Recognize("testdata/pristin.jpg")
+	faces, err := rec.RecognizeFile("testdata/pristin.jpg")
 	if err != nil {
 		t.Fatalf("Can't get faces: %v", err)
 	}

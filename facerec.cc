@@ -1,8 +1,8 @@
 #include <dlib/dnn.h>
-#include <dlib/image_io.h>
+#include <dlib/image_loader/image_loader.h>
 #include <dlib/image_processing/frontal_face_detector.h>
-
 #include "facerec.h"
+#include "jpeg_mem_loader.h"
 
 using namespace dlib;
 
@@ -36,6 +36,7 @@ using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
 
 typedef matrix<float,0,1> descriptor;
 typedef std::pair<std::vector<rectangle>, std::vector<descriptor>> faces;
+
 static const size_t RECT_SIZE = 4 * sizeof(long);
 static const size_t DESCR_SIZE = 128 * sizeof(float);
 
@@ -53,10 +54,7 @@ public:
 	}
 
 	// TODO(Kagami): Jittering?
-	faces Recognize(const char* img_path, int max_faces) {
-		matrix<rgb_pixel> img;
-		load_image(img, img_path);
-
+	faces Recognize(matrix<rgb_pixel>& img, int max_faces) {
 		std::vector<rectangle> rects = detector_(img);
 		std::vector<descriptor> descrs;
 
@@ -98,11 +96,14 @@ facerec* facerec_init(const char* model_dir) {
 	return rec;
 }
 
-faceret* facerec_recognize(facerec* rec, const char* img_path, int max_faces) {
+faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int max_faces) {
 	faceret* ret = (faceret*)calloc(1, sizeof(faceret));
 	FaceRec* cls = (FaceRec*)(rec->cls);
+	matrix<rgb_pixel> img;
 	try {
-		faces faces = cls->Recognize(img_path, max_faces);
+		// TODO(Kagami): Support more file types?
+		load_mem_jpeg(img, img_data, len);
+		faces faces = cls->Recognize(img, max_faces);
 		std::vector<rectangle> rects = faces.first;
 		std::vector<descriptor> descrs = faces.second;
 		ret->num_faces = descrs.size();
