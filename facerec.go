@@ -137,7 +137,8 @@ func (rec *FaceRec) RecognizeSingleFile(imgPath string) (face *Face, err error) 
 	return
 }
 
-// Return class for the unknown descriptor.
+// Return class for the unknown descriptor. Negative index is returned
+// if no match.
 func (rec *FaceRec) Classify(samples []FaceDescriptor, testSample FaceDescriptor) (idx int, err error) {
 	if len(samples) == 0 {
 		err = ClassifyError("No samples")
