@@ -3,6 +3,7 @@
 #include <dlib/image_processing/frontal_face_detector.h>
 #include "facerec.h"
 #include "jpeg_mem_loader.h"
+#include "classify.h"
 
 using namespace dlib;
 
@@ -37,8 +38,10 @@ using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
 typedef matrix<float,0,1> descriptor;
 typedef std::pair<std::vector<rectangle>, std::vector<descriptor>> faces;
 
-static const size_t RECT_SIZE = 4 * sizeof(long);
-static const size_t DESCR_SIZE = 128 * sizeof(float);
+static const size_t RECT_LEN = 4;
+static const size_t DESCR_LEN = 128;
+static const size_t RECT_SIZE = RECT_LEN * sizeof(long);
+static const size_t DESCR_SIZE = DESCR_LEN * sizeof(float);
 
 class FaceRec {
 public:
@@ -131,6 +134,16 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 		ret->err_code = UNKNOWN_ERROR;
 	}
 	return ret;
+}
+
+int facerec_classify(facerec* rec, const float* descriptors, int len, const float* descriptor) {
+	std::vector<sample_type> samples;
+	for (int i = 0; i < len; i++) {
+		sample_type sample = mat(descriptors + i*DESCR_LEN, DESCR_LEN, 1);
+		samples.push_back(sample);
+	}
+	sample_type test_sample = mat(descriptor, DESCR_LEN, 1);
+	return classify(samples, test_sample);
 }
 
 void facerec_free(facerec* rec) {

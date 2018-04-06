@@ -16,6 +16,12 @@ func (e SerializationError) Error() string {
 	return string(e)
 }
 
+type ClassifyError string
+
+func (e ClassifyError) Error() string {
+	return string(e)
+}
+
 type UnknownError string
 
 func (e UnknownError) Error() string {

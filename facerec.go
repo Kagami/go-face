@@ -16,7 +16,7 @@ const (
 	descrLen = 128
 )
 
-// Preinitialized extractor.
+// Preinitialized recognizer.
 type FaceRec struct {
 	p *_Ctype_struct_facerec
 }
@@ -24,8 +24,11 @@ type FaceRec struct {
 // Face structure.
 type Face struct {
 	Rectangle  image.Rectangle
-	Descriptor [descrLen]float32
+	Descriptor FaceDescriptor
 }
+
+// Descriptor alias.
+type FaceDescriptor [descrLen]float32
 
 func NewFaceRec(modelDir string) (rec *FaceRec, err error) {
 	cModelDir := C.CString(modelDir)
@@ -131,6 +134,19 @@ func (rec *FaceRec) RecognizeSingleFile(imgPath string) (face *Face, err error) 
 		return
 	}
 	face = &faces[0]
+	return
+}
+
+// Return class for the unknown descriptor.
+func (rec *FaceRec) Classify(samples []FaceDescriptor, testSample FaceDescriptor) (idx int, err error) {
+	if len(samples) == 0 {
+		err = ClassifyError("No samples")
+		return
+	}
+	cSamples := (*C.float)(unsafe.Pointer(&samples[0]))
+	cLen := C.int(len(samples))
+	cTestSample := (*C.float)(unsafe.Pointer(&testSample))
+	idx = int(C.facerec_classify(rec.p, cSamples, cLen, cTestSample))
 	return
 }
 
