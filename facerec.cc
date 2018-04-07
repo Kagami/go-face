@@ -36,7 +36,6 @@ using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
                             >>>>>>>>>>>>;
 
 typedef matrix<float,0,1> descriptor;
-typedef std::pair<std::vector<rectangle>, std::vector<descriptor>> faces;
 
 static const size_t RECT_LEN = 4;
 static const size_t DESCR_LEN = 128;
@@ -57,16 +56,17 @@ public:
 	}
 
 	// TODO(Kagami): Jittering?
-	faces Recognize(matrix<rgb_pixel>& img, int max_faces) {
+	std::pair<std::vector<rectangle>, std::vector<descriptor>>
+	Recognize(const matrix<rgb_pixel>& img, int max_faces) {
 		std::vector<rectangle> rects = detector_(img);
 		std::vector<descriptor> descrs;
 
 		// Short circuit.
-		if (rects.size() == 0 || (max_faces && rects.size() > max_faces))
-			return {rects, descrs};
+		if (rects.size() == 0 || (max_faces > 0 && rects.size() > (size_t)max_faces))
+			return {std::move(rects), std::move(descrs)};
 
 		std::vector<matrix<rgb_pixel>> face_imgs;
-		for (auto rect : rects) {
+		for (const auto& rect : rects) {
 			auto shape = sp_(img, rect);
 			matrix<rgb_pixel> face_chip;
 			extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
@@ -74,9 +74,18 @@ public:
 		}
 
 		descrs = net_(face_imgs);
-		return {rects, descrs};
+		return {std::move(rects), std::move(descrs)};
+	}
+
+	void SetSamples(std::vector<sample_type> samples) {
+		samples_ = std::move(samples);
+	}
+
+	int Classify(const sample_type& test_sample) {
+		return classify(samples_, test_sample);
 	}
 private:
+	std::vector<sample_type> samples_;
 	frontal_face_detector detector_;
 	shape_predictor sp_;
 	anet_type net_;
@@ -106,9 +115,7 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 	try {
 		// TODO(Kagami): Support more file types?
 		load_mem_jpeg(img, img_data, len);
-		faces faces = cls->Recognize(img, max_faces);
-		std::vector<rectangle> rects = faces.first;
-		std::vector<descriptor> descrs = faces.second;
+		auto [rects, descrs] = cls->Recognize(img, max_faces);
 		ret->num_faces = descrs.size();
 		if (ret->num_faces == 0)
 			return ret;
@@ -136,14 +143,20 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 	return ret;
 }
 
-int facerec_classify(facerec* rec, const float* descriptors, int len, const float* descriptor) {
+void facerec_set_samples(facerec* rec, const float* descriptors, int len) {
+	FaceRec* cls = (FaceRec*)(rec->cls);
 	std::vector<sample_type> samples;
 	for (int i = 0; i < len; i++) {
 		sample_type sample = mat(descriptors + i*DESCR_LEN, DESCR_LEN, 1);
-		samples.push_back(sample);
+		samples.push_back(std::move(sample));
 	}
+	cls->SetSamples(std::move(samples));
+}
+
+int facerec_classify(facerec* rec, const float* descriptor) {
+	FaceRec* cls = (FaceRec*)(rec->cls);
 	sample_type test_sample = mat(descriptor, DESCR_LEN, 1);
-	return classify(samples, test_sample);
+	return cls->Classify(test_sample);
 }
 
 void facerec_free(facerec* rec) {

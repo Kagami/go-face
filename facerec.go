@@ -137,18 +137,21 @@ func (rec *FaceRec) RecognizeSingleFile(imgPath string) (face *Face, err error) 
 	return
 }
 
-// Return class for the unknown descriptor. Negative index is returned
-// if no match.
-func (rec *FaceRec) Classify(samples []FaceDescriptor, testSample FaceDescriptor) (idx int, err error) {
+// Set known samples for the future use.
+func (rec *FaceRec) SetSamples(samples []FaceDescriptor) {
 	if len(samples) == 0 {
-		err = ClassifyError("No samples")
 		return
 	}
 	cSamples := (*C.float)(unsafe.Pointer(&samples[0]))
 	cLen := C.int(len(samples))
+	C.facerec_set_samples(rec.p, cSamples, cLen)
+}
+
+// Return class for the unknown descriptor. Negative index is returned
+// if no match.
+func (rec *FaceRec) Classify(testSample FaceDescriptor) int {
 	cTestSample := (*C.float)(unsafe.Pointer(&testSample))
-	idx = int(C.facerec_classify(rec.p, cSamples, cLen, cTestSample))
-	return
+	return int(C.facerec_classify(rec.p, cTestSample))
 }
 
 func (rec *FaceRec) Close() {

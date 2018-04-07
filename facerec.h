@@ -26,7 +26,8 @@ typedef struct faceret {
 
 facerec* facerec_init(const char* model_dir);
 faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int max_faces);
-int facerec_classify(facerec* rec, const float* descriptors, int len, const float* descriptor);
+void facerec_set_samples(facerec* rec, const float* descriptors, int len);
+int facerec_classify(facerec* rec, const float* descriptor);
 void facerec_free(facerec* rec);
 
 #ifdef __cplusplus
