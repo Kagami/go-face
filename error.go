@@ -1,4 +1,4 @@
-package dlib
+package face
 
 // #include <stdint.h>
 // #include "facerec.h"

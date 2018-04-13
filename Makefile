@@ -1,7 +1,7 @@
 export GOPATH = $(PWD)
 
 testdata:
-	git clone https://github.com/Kagami/go-dlib-testdata testdata
+	git clone https://github.com/Kagami/go-face-testdata testdata
 
 gofmt-staged:
 	./gofmt-staged.sh

@@ -1,6 +1,6 @@
-# go-dlib
+# go-face
 
-Partial [dlib](https://github.com/davisking/dlib) bindings for Go.
+Face recognition for Go.
 
 ## License
 

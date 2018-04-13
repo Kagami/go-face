@@ -1,4 +1,4 @@
-package dlib
+package face
 
 import (
 	"testing"
