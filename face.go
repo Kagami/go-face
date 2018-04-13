@@ -33,6 +33,11 @@ type Face struct {
 // Descriptor alias.
 type Descriptor [descrLen]float32
 
+// https://www.youtube.com/watch?v=OwJPPaEyqhI
+func New(r image.Rectangle, d Descriptor) Face {
+	return Face{r, d}
+}
+
 func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
 	cModelDir := C.CString(modelDir)
 	defer C.free(unsafe.Pointer(cModelDir))
