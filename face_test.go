@@ -5,7 +5,7 @@ import (
 )
 
 func TestNumFaces(t *testing.T) {
-	rec, err := NewFaceRec("testdata")
+	rec, err := NewRecognizer("testdata")
 	if err != nil {
 		t.Fatalf("Can't init face recognizer: %v", err)
 	}
