@@ -77,15 +77,19 @@ public:
 		return {std::move(rects), std::move(descrs)};
 	}
 
-	void SetSamples(std::vector<sample_type> samples) {
+	void SetSamples(std::vector<sample_type> samples, std::unordered_map<int, int> cats) {
 		samples_ = std::move(samples);
+		cats_ = std::move(cats);
 	}
 
 	int Classify(const sample_type& test_sample) {
-		return classify(samples_, test_sample);
+		if (samples_.size() == 0)
+			return -1;
+		return classify(samples_, cats_, test_sample);
 	}
 private:
 	std::vector<sample_type> samples_;
+	std::unordered_map<int, int> cats_;
 	frontal_face_detector detector_;
 	shape_predictor sp_;
 	anet_type net_;
@@ -143,14 +147,27 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 	return ret;
 }
 
-void facerec_set_samples(facerec* rec, const float* descriptors, int len) {
+void facerec_set_samples(
+	facerec* rec,
+	const float* descriptors,
+	const int32_t* cats,
+	int len
+) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	std::vector<sample_type> samples;
+	samples.reserve(len);
 	for (int i = 0; i < len; i++) {
 		sample_type sample = mat(descriptors + i*DESCR_LEN, DESCR_LEN, 1);
 		samples.push_back(std::move(sample));
 	}
-	cls->SetSamples(std::move(samples));
+	std::unordered_map<int, int> cat_by_idx;
+	cat_by_idx.reserve(len);
+	for (int i = 0; i < len; i++) {
+		int idx = cats[i*2];
+		int cat_idx = cats[i*2+1];
+		cat_by_idx[idx] = cat_idx;
+	}
+	cls->SetSamples(std::move(samples), std::move(cat_by_idx));
 }
 
 int facerec_classify(facerec* rec, const float* descriptor) {

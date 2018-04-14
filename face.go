@@ -59,7 +59,7 @@ func (rec *Recognizer) recognize(imgData []byte, maxFaces int) (faces []Face, er
 		err = ImageLoadError("Empty image")
 		return
 	}
-	cImgData := (*C.uchar)(&imgData[0])
+	cImgData := (*C.uint8_t)(&imgData[0])
 	cLen := C.int(len(imgData))
 	cMaxFaces := C.int(maxFaces)
 	ret := C.facerec_recognize(rec.p, cImgData, cLen, cMaxFaces)
@@ -146,13 +146,14 @@ func (rec *Recognizer) RecognizeSingleFile(imgPath string) (face *Face, err erro
 }
 
 // Set known samples for the future use.
-func (rec *Recognizer) SetSamples(samples []Descriptor) {
-	if len(samples) == 0 {
+func (rec *Recognizer) SetSamples(samples []Descriptor, cats [][2]int32) {
+	if len(samples) == 0 || len(samples) != len(cats) {
 		return
 	}
 	cSamples := (*C.float)(unsafe.Pointer(&samples[0]))
+	cCats := (*C.int32_t)(unsafe.Pointer(&cats[0]))
 	cLen := C.int(len(samples))
-	C.facerec_set_samples(rec.p, cSamples, cLen)
+	C.facerec_set_samples(rec.p, cSamples, cCats, cLen)
 }
 
 // Return class for the unknown descriptor. Negative index is returned
