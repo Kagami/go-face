@@ -22,7 +22,7 @@ int classify(
 	);
 
 	int len = std::min((int)distances.size(), 10);
-	std::unordered_map<int, int> hits_by_cat;
+	std::map<int, int> hits_by_cat;
 	for (int i = 0; i < len; i++) {
 		int idx = distances[i].first;
 		auto cat = cats.find(idx);
@@ -43,5 +43,6 @@ int classify(
 		[](const auto a, const auto b) { return a.second < b.second; }
 	);
 	// printf("Found cat with max hits: %d\n", hits->first);
+	// fflush(stdout);
 	return hits->first;
 }
