@@ -29,24 +29,24 @@ int classify(
 		auto cat = cats.find(idx);
 		if (cat == cats.end())
 			continue;
-		int catIdx = cat->second;
-		auto hit = hits_by_cat.find(catIdx);
+		int cat_idx = cat->second;
+		auto hit = hits_by_cat.find(cat_idx);
 		if (hit == hits_by_cat.end()) {
-			// printf("1 hit for %d (%d: %f)\n", catIdx, idx, dist);
-			hits_by_cat[catIdx] = {1, dist};
+			// printf("1 hit for %d (%d: %f)\n", cat_idx, idx, dist);
+			hits_by_cat[cat_idx] = {1, dist};
 		} else {
-			// printf("+1 hit for %d (%d: %f)\n", catIdx, idx, dist);
-			hits_by_cat[catIdx].first++;
+			// printf("+1 hit for %d (%d: %f)\n", cat_idx, idx, dist);
+			hits_by_cat[cat_idx].first++;
 		}
 	}
 
 	auto hit = std::max_element(
 		hits_by_cat.begin(), hits_by_cat.end(),
 		[](const auto a, const auto b) {
-			int hits1 = a.second.first;
-			int hits2 = b.second.first;
-			double dist1 = a.second.second;
-			double dist2 = b.second.second;
+			auto hits1 = a.second.first;
+			auto hits2 = b.second.first;
+			auto dist1 = a.second.second;
+			auto dist2 = b.second.second;
 			if (hits1 == hits2) return dist1 > dist2;
 			return hits1 < hits2;
 		}
