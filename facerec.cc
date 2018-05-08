@@ -163,9 +163,7 @@ void facerec_set_samples(
 	std::unordered_map<int, int> cat_by_idx;
 	cat_by_idx.reserve(len);
 	for (int i = 0; i < len; i++) {
-		int idx = cats[i*2];
-		int cat_idx = cats[i*2+1];
-		cat_by_idx[idx] = cat_idx;
+		cat_by_idx[i] = cats[i];
 	}
 	cls->SetSamples(std::move(samples), std::move(cat_by_idx));
 }

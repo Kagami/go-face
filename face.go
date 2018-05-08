@@ -146,7 +146,7 @@ func (rec *Recognizer) RecognizeSingleFile(imgPath string) (face *Face, err erro
 }
 
 // Set known samples for the future use.
-func (rec *Recognizer) SetSamples(samples []Descriptor, cats [][2]int32) {
+func (rec *Recognizer) SetSamples(samples []Descriptor, cats []int32) {
 	if len(samples) == 0 || len(samples) != len(cats) {
 		return
 	}
