@@ -1,0 +1,8 @@
+dist: xenial
+sudo: false
+language: go
+go:
+  - "1.x"
+notifications:
+  email:
+    on_success: never

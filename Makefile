@@ -1,5 +1,6 @@
 export GOPATH = $(PWD)
 
+all: test
 precommit: gofmt-staged
 
 gofmt-staged:
