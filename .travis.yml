@@ -3,6 +3,12 @@ sudo: required
 language: go
 go:
   - "1.x"
+addons:
+  apt:
+    sources:
+      - sourceline: "ppa:kagamih/dlib"
+    packages:
+      - libdlib-dev
 notifications:
   email:
     on_success: never
