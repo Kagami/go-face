@@ -8,6 +8,7 @@ addons:
     sources:
       - sourceline: "ppa:kagamih/dlib"
     packages:
+      - libmkl-dev
       - libdlib-dev
       - libjpeg-turbo8-dev
 notifications:
