@@ -119,7 +119,9 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 	try {
 		// TODO(Kagami): Support more file types?
 		load_mem_jpeg(img, img_data, len);
-		auto [rects, descrs] = cls->Recognize(img, max_faces);
+		auto faces = cls->Recognize(img, max_faces);
+		auto rects = faces.first;
+		auto descrs = faces.second;
 		ret->num_faces = descrs.size();
 		if (ret->num_faces == 0)
 			return ret;

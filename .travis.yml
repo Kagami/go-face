@@ -9,6 +9,7 @@ addons:
       - sourceline: "ppa:kagamih/dlib"
     packages:
       - libdlib-dev
+      - libjpeg-turbo8-dev
 notifications:
   email:
     on_success: never
