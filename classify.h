@@ -1,3 +1,5 @@
+#pragma once
+
 #include <unordered_map>
 
 typedef dlib::matrix<float,128,1> sample_type;
