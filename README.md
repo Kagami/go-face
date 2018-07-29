@@ -30,8 +30,8 @@ Unstable branch of Debian contains suitable version of dlib so just run:
 sudo apt-get install libdlib-dev libjpeg62-turbo-dev
 ```
 
-Unfortunately libdlib-dev doesn't provide pkgconfig metadata file so create one
-in `/usr/local/lib/pkgconfig/dlib-1.pc` with the following content:
+Debian's libdlib-dev doesn't provide pkgconfig metadata file so create one in
+`/usr/local/lib/pkgconfig/dlib-1.pc` with the following content:
 
 ```
 libdir=/usr/lib/x86_64-linux-gnu
@@ -48,21 +48,20 @@ Requires:
 ### Other
 
 Try to install dlib/libjpeg with package manager of your distribution or
-[compile from sources](http://dlib.net/compile.html). Note that go-face won't
-work with old packages of dlib such as libdlib18.
+[compile from sources](http://dlib.net/compile.html).
+
+Note that go-face won't work with old packages of dlib such as libdlib18.
 
 ## Usage
 
 
 ## Test
 
-Run
+To fetch test data and run tests:
 
 ```bash
 make test
 ```
-
-to fetch test data and run tests.
 
 ## License
 
