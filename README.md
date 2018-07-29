@@ -19,15 +19,15 @@ sudo apt-get update
 sudo apt-get install libdlib-dev libjpeg-turbo8-dev
 ```
 
-If you're using other version of Ubuntu plese let me know in issues and I may
-try to create package for it too.
+If you're using other version of Ubuntu plese create issue and I may try to
+make package for it too.
 
 ### Debian sid
 
 Unstable branch of Debian contains suitable version of dlib so just run:
 
 ```bash
-sudo apt-get install libdlib-dev libjpeg62-turbo-dev
+sudo apt-get install libdlib-dev libopenblas-dev libjpeg62-turbo-dev
 ```
 
 Debian's libdlib-dev doesn't provide pkgconfig metadata file so create one in
