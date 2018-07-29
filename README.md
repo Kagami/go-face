@@ -27,7 +27,7 @@ make package for it too.
 Unstable branch of Debian contains suitable version of dlib so just run:
 
 ```bash
-sudo apt-get install libdlib-dev libopenblas-dev libjpeg62-turbo-dev
+sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg62-turbo-dev
 ```
 
 Debian's libdlib-dev doesn't provide pkgconfig metadata file so create one in
