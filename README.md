@@ -1,9 +1,9 @@
 # go-face [![Build Status](https://travis-ci.org/Kagami/go-face.svg?branch=master)](https://travis-ci.org/Kagami/go-face)
 
-go-face implements face recognition for Go, using modern machine learning
-toolkit [dlib](http://dlib.net) underneath.
+go-face implements face recognition for Go using [dlib](http://dlib.net), a
+popular machine learning toolkit.
 
-## Dependencies
+## Requirements
 
 To compile go-face you need to have dlib (>= 19.10) and libjpeg development
 packages installed.
@@ -51,6 +51,12 @@ Try to install dlib/libjpeg with package manager of your distribution or
 [compile from sources](http://dlib.net/compile.html).
 
 Note that go-face won't work with old packages of dlib such as libdlib18.
+
+## Models
+
+Currently `shape_predictor_5_face_landmarks.dat` and
+`dlib_face_recognition_resnet_model_v1.dat` are required. You may download them
+from [dlib-models](https://github.com/davisking/dlib-models) repo.
 
 ## Usage
 
