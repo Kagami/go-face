@@ -21,7 +21,7 @@ const (
 
 // Preinitialized recognizer.
 type Recognizer struct {
-	p *_Ctype_struct_facerec
+	ptr *_Ctype_struct_facerec
 }
 
 // Face structure.
@@ -41,16 +41,16 @@ func New(r image.Rectangle, d Descriptor) Face {
 func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
 	cModelDir := C.CString(modelDir)
 	defer C.free(unsafe.Pointer(cModelDir))
-	p := C.facerec_init(cModelDir)
+	ptr := C.facerec_init(cModelDir)
 
-	if p.err_str != nil {
-		defer C.facerec_free(p)
-		defer C.free(unsafe.Pointer(p.err_str))
-		err = makeError(C.GoString(p.err_str), int(p.err_code))
+	if ptr.err_str != nil {
+		defer C.facerec_free(ptr)
+		defer C.free(unsafe.Pointer(ptr.err_str))
+		err = makeError(C.GoString(ptr.err_str), int(ptr.err_code))
 		return
 	}
 
-	rec = &Recognizer{p}
+	rec = &Recognizer{ptr}
 	return
 }
 
@@ -62,7 +62,7 @@ func (rec *Recognizer) recognize(imgData []byte, maxFaces int) (faces []Face, er
 	cImgData := (*C.uint8_t)(&imgData[0])
 	cLen := C.int(len(imgData))
 	cMaxFaces := C.int(maxFaces)
-	ret := C.facerec_recognize(rec.p, cImgData, cLen, cMaxFaces)
+	ret := C.facerec_recognize(rec.ptr, cImgData, cLen, cMaxFaces)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -153,17 +153,17 @@ func (rec *Recognizer) SetSamples(samples []Descriptor, cats []int32) {
 	cSamples := (*C.float)(unsafe.Pointer(&samples[0]))
 	cCats := (*C.int32_t)(unsafe.Pointer(&cats[0]))
 	cLen := C.int(len(samples))
-	C.facerec_set_samples(rec.p, cSamples, cCats, cLen)
+	C.facerec_set_samples(rec.ptr, cSamples, cCats, cLen)
 }
 
 // Return class for the unknown descriptor. Negative index is returned
 // if no match.
 func (rec *Recognizer) Classify(testSample Descriptor) int {
 	cTestSample := (*C.float)(unsafe.Pointer(&testSample))
-	return int(C.facerec_classify(rec.p, cTestSample))
+	return int(C.facerec_classify(rec.ptr, cTestSample))
 }
 
 func (rec *Recognizer) Close() {
-	C.facerec_free(rec.p)
-	rec.p = nil
+	C.facerec_free(rec.ptr)
+	rec.ptr = nil
 }
