@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -114,16 +113,8 @@ func getTrainData(idata *IdolData) (tdata *TrainData) {
 	return
 }
 
-func recognizeFile(fpath string) (catID *int, err error) {
-	fd, err := os.Open(fpath)
-	if err != nil {
-		return
-	}
-	imgData, err := ioutil.ReadAll(fd)
-	if err != nil {
-		return
-	}
-	f, err := rec.RecognizeSingle(imgData)
+func recognizeAndClassify(fpath string) (catID *int, err error) {
+	f, err := rec.RecognizeSingleFile(fpath)
 	if err != nil || f == nil {
 		return
 	}
@@ -168,7 +159,7 @@ func TestIdols(t *testing.T) {
 			expectedIname := names[0]
 			expectedBname := names[1]
 
-			catID, err := recognizeFile(getTPath(fname))
+			catID, err := recognizeAndClassify(getTPath(fname))
 			if err != nil {
 				t.Fatal(err)
 			}
