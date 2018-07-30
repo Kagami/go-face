@@ -8,9 +8,9 @@ popular machine learning toolkit.
 To compile go-face you need to have dlib (>= 19.10) and libjpeg development
 packages installed.
 
-### Ubuntu 16.04
+### Ubuntu 16.04, Ubuntu 18.04
 
-You may use [dlib PPA](https://launchpad.net/~kagamih/+archive/ubuntu/dlib)
+You may use my [dlib PPA](https://launchpad.net/~kagamih/+archive/ubuntu/dlib)
 which contains latest dlib package compiled with Intel MKL support:
 
 ```bash
@@ -19,19 +19,16 @@ sudo apt-get update
 sudo apt-get install libdlib-dev libjpeg-turbo8-dev
 ```
 
-If you're using other version of Ubuntu plese create issue and I may try to
-make package for it too.
+### Ubuntu 18.10+, Debian sid
 
-### Debian sid
-
-Unstable branch of Debian contains suitable version of dlib so just run:
+Latest versions of Ubuntu and Debian provide suitable dlib package so just run:
 
 ```bash
 sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg62-turbo-dev
 ```
 
-Debian's libdlib-dev doesn't provide pkgconfig metadata file so create one in
-`/usr/local/lib/pkgconfig/dlib-1.pc` with the following content:
+Unfortunately libdlib-dev doesn't contain pkgconfig metadata file so create one
+in `/usr/local/lib/pkgconfig/dlib-1.pc` with the following content:
 
 ```
 libdir=/usr/lib/x86_64-linux-gnu
@@ -45,12 +42,11 @@ Cflags: -I${includedir}
 Requires:
 ```
 
-### Other
+### Other systems
 
 Try to install dlib/libjpeg with package manager of your distribution or
-[compile from sources](http://dlib.net/compile.html).
-
-Note that go-face won't work with old packages of dlib such as libdlib18.
+[compile from sources](http://dlib.net/compile.html). Note that go-face won't
+work with old packages of dlib such as libdlib18.
 
 ## Models
 
