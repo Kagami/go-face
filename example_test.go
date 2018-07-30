@@ -1,8 +1,10 @@
-package face
+package face_test
 
 import (
 	"fmt"
 	"log"
+
+	"github.com/Kagami/go-face"
 )
 
 const (
@@ -15,8 +17,8 @@ const (
 
 // This example shows the basic usage of the package: create an
 // recognizer, recognize faces, classify them using few known ones.
-func Example() {
-	rec, err := NewRecognizer(modelDir)
+func Example_basic() {
+	rec, err := face.NewRecognizer(modelDir)
 	if err != nil {
 		log.Fatalf("Can't init face recognizer: %v", err)
 	}

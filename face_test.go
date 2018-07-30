@@ -1,4 +1,4 @@
-package face
+package face_test
 
 import (
 	"encoding/base64"
@@ -9,10 +9,12 @@ import (
 	"strings"
 	"testing"
 	"unsafe"
+
+	"github.com/Kagami/go-face"
 )
 
 var (
-	rec *Recognizer
+	rec *face.Recognizer
 
 	idolTests = map[string]string{
 		"elkie.jpg":      "Elkie, CLC",
@@ -50,7 +52,7 @@ type IdolData struct {
 }
 
 type TrainData struct {
-	samples []Descriptor
+	samples []face.Descriptor
 	cats    []int32
 	labels  map[int]string
 }
@@ -77,16 +79,16 @@ func getIdolData() (idata *IdolData, err error) {
 	return
 }
 
-func str2descr(s string) Descriptor {
+func str2descr(s string) face.Descriptor {
 	b, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		panic(err)
 	}
-	return *(*Descriptor)(unsafe.Pointer(&b[0]))
+	return *(*face.Descriptor)(unsafe.Pointer(&b[0]))
 }
 
 func getTrainData(idata *IdolData) (tdata *TrainData) {
-	var samples []Descriptor
+	var samples []face.Descriptor
 	var cats []int32
 	labels := make(map[int]string)
 
@@ -128,7 +130,7 @@ func recognizeAndClassify(fpath string) (catID *int, err error) {
 
 func TestInit(t *testing.T) {
 	var err error
-	rec, err = NewRecognizer("testdata")
+	rec, err = face.NewRecognizer("testdata")
 	if err != nil {
 		t.Fatalf("Can't init face recognizer: %v", err)
 	}

@@ -1,4 +1,6 @@
-export GOPATH = $(PWD)
+# Should contain src/github.com/Kagami/go-face or tests won't work
+# properly (multiple definition of C functions).
+export GOPATH = $(PWD)/../../../..
 
 all: test
 precommit: gofmt-staged
