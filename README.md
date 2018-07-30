@@ -10,7 +10,7 @@ packages installed.
 
 ### Ubuntu 16.04, Ubuntu 18.04
 
-You may use my [dlib PPA](https://launchpad.net/~kagamih/+archive/ubuntu/dlib)
+You may use [dlib PPA](https://launchpad.net/~kagamih/+archive/ubuntu/dlib)
 which contains latest dlib package compiled with Intel MKL support:
 
 ```bash
@@ -24,6 +24,9 @@ sudo apt-get install libdlib-dev libjpeg-turbo8-dev
 Latest versions of Ubuntu and Debian provide suitable dlib package so just run:
 
 ```bash
+# Ubuntu
+sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg-turbo8-dev
+# Debian
 sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg62-turbo-dev
 ```
 
@@ -47,6 +50,9 @@ Requires:
 Try to install dlib/libjpeg with package manager of your distribution or
 [compile from sources](http://dlib.net/compile.html). Note that go-face won't
 work with old packages of dlib such as libdlib18.
+
+Or create issue with the name of your system and someone might help you with
+the installation process.
 
 ## Models
 
