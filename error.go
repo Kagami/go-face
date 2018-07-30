@@ -11,7 +11,7 @@ func (e ImageLoadError) Error() string {
 	return string(e)
 }
 
-// An Serialization is returned when provided model is corrupted.
+// An SerializationError is returned when provided model is corrupted.
 type SerializationError string
 
 func (e SerializationError) Error() string {

@@ -32,14 +32,16 @@ type Face struct {
 }
 
 // Descriptor holds 128-dimensional feature vector.
-type Descriptor [descrLen]float32
+type Descriptor [128]float32
 
 // New creates new face with the provided parameters.
 func New(r image.Rectangle, d Descriptor) Face {
 	return Face{r, d}
 }
 
-// NewRecognizer returns a new recognizer interface
+// NewRecognizer returns a new recognizer interface. modelDir points to
+// directory with shape_predictor_5_face_landmarks.dat and
+// dlib_face_recognition_resnet_model_v1.dat files.
 func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
 	cModelDir := C.CString(modelDir)
 	defer C.free(unsafe.Pointer(cModelDir))
