@@ -140,7 +140,7 @@ func TestNumFaces(t *testing.T) {
 		t.Fatalf("Can't get faces: %v", err)
 	}
 	numFaces := len(faces)
-	if err != nil || numFaces != 10 {
+	if numFaces != 10 {
 		t.Fatalf("Wrong number of faces: %d", numFaces)
 	}
 }
