@@ -30,8 +30,8 @@ sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg-turbo8-dev
 sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg62-turbo-dev
 ```
 
-Unfortunately libdlib-dev doesn't contain pkgconfig metadata file so create one
-in `/usr/local/lib/pkgconfig/dlib-1.pc` with the following content:
+It won't install pkgconfig metadata file though so create one in
+`/usr/local/lib/pkgconfig/dlib-1.pc` with the following content:
 
 ```
 libdir=/usr/lib/x86_64-linux-gnu
@@ -62,6 +62,19 @@ from [dlib-models](https://github.com/davisking/dlib-models) repo.
 
 ## Usage
 
+To use go-face in your Go code:
+
+```go
+import "github.com/Kagami/go-face"
+```
+
+To install go-face in your $GOPATH:
+
+```bash
+go get github.com/Kagami/go-face
+```
+
+For further details see [GoDoc documentation for go-face](https://godoc.org/github.com/Kagami/go-face).
 
 ## Test
 
@@ -73,4 +86,4 @@ make test
 
 ## License
 
-[CC0](COPYING).
+go-face is licensed under [CC0](COPYING).
