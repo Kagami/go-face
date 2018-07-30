@@ -19,25 +19,27 @@ const (
 	descrLen = 128
 )
 
-// Preinitialized recognizer.
+// A Recognizer creates face descriptors for provided images and
+// classifies them into categories.
 type Recognizer struct {
 	ptr *_Ctype_struct_facerec
 }
 
-// Face structure.
+// Face holds coordinates and descriptor of the human face.
 type Face struct {
 	Rectangle  image.Rectangle
 	Descriptor Descriptor
 }
 
-// Descriptor alias.
+// Descriptor holds 128-dimensional feature vector.
 type Descriptor [descrLen]float32
 
-// https://www.youtube.com/watch?v=OwJPPaEyqhI
+// New creates new face with the provided parameters.
 func New(r image.Rectangle, d Descriptor) Face {
 	return Face{r, d}
 }
 
+// NewRecognizer returns a new recognizer interface
 func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
 	cModelDir := C.CString(modelDir)
 	defer C.free(unsafe.Pointer(cModelDir))
@@ -102,7 +104,6 @@ func (rec *Recognizer) recognize(imgData []byte, maxFaces int) (faces []Face, er
 	return
 }
 
-// Convenient method.
 func (rec *Recognizer) recognizeFile(imgPath string, maxFaces int) (face []Face, err error) {
 	fd, err := os.Open(imgPath)
 	if err != nil {
@@ -115,14 +116,17 @@ func (rec *Recognizer) recognizeFile(imgPath string, maxFaces int) (face []Face,
 	return rec.recognize(imgData, maxFaces)
 }
 
-// Recognize all image faces.
+// Recognize returns all faces found on the provided image. Only JPEG
+// image format is supported by now.
+//
 // Empty list is returned if there are no faces, error is returned if
 // there was some error while decoding/processing image.
 func (rec *Recognizer) Recognize(imgData []byte) (faces []Face, err error) {
 	return rec.recognize(imgData, 0)
 }
 
-// Recognize if image has single face or return nil otherwise.
+// RecognizeSingle returns face if it's the only face on the image or
+// nil otherwise. Only JPEG image format is supported by now.
 func (rec *Recognizer) RecognizeSingle(imgData []byte) (face *Face, err error) {
 	faces, err := rec.recognize(imgData, 1)
 	if err != nil || len(faces) != 1 {
@@ -132,10 +136,12 @@ func (rec *Recognizer) RecognizeSingle(imgData []byte) (face *Face, err error) {
 	return
 }
 
+// Same as Recognize but accepts image path instead.
 func (rec *Recognizer) RecognizeFile(imgPath string) (faces []Face, err error) {
 	return rec.recognizeFile(imgPath, 0)
 }
 
+// Same as RecognizeSingle but accepts image path instead.
 func (rec *Recognizer) RecognizeSingleFile(imgPath string) (face *Face, err error) {
 	faces, err := rec.recognizeFile(imgPath, 1)
 	if err != nil || len(faces) != 1 {
@@ -145,7 +151,7 @@ func (rec *Recognizer) RecognizeSingleFile(imgPath string) (face *Face, err erro
 	return
 }
 
-// Set known samples for the future use.
+// SetSamples sets known descriptors so you can classify the new ones.
 func (rec *Recognizer) SetSamples(samples []Descriptor, cats []int32) {
 	if len(samples) == 0 || len(samples) != len(cats) {
 		return
@@ -156,13 +162,15 @@ func (rec *Recognizer) SetSamples(samples []Descriptor, cats []int32) {
 	C.facerec_set_samples(rec.ptr, cSamples, cCats, cLen)
 }
 
-// Return class for the unknown descriptor. Negative index is returned
-// if no match.
+// Classify returns class ID for the given descriptor. Negative index is
+// returned if no match.
 func (rec *Recognizer) Classify(testSample Descriptor) int {
 	cTestSample := (*C.float)(unsafe.Pointer(&testSample))
 	return int(C.facerec_classify(rec.ptr, cTestSample))
 }
 
+// Close frees resources taken by the Recognizer. Safe to call multiple
+// times. Don't use Recognizer after close call.
 func (rec *Recognizer) Close() {
 	C.facerec_free(rec.ptr)
 	rec.ptr = nil
