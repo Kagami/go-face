@@ -8,13 +8,14 @@ import (
 	"github.com/Kagami/go-face"
 )
 
+// Path to directory with models and test images. Here it's assumed it
+// points to the <https://github.com/Kagami/go-face-testdata> clone.
+const dataDir = "testdata"
+
 // This example shows the basic usage of the package: create an
 // recognizer, recognize faces, classify them using few known ones.
 func Example_basic() {
-	// Path to directory with models and test images. Here it's assumed it
-	// points to the <https://github.com/Kagami/go-face-testdata> clone.
-	dataDir := "testdata"
-	// Now init the recognizer.
+	// Init the recognizer.
 	rec, err := face.NewRecognizer(dataDir)
 	if err != nil {
 		log.Fatalf("Can't init face recognizer: %v", err)
