@@ -30,7 +30,7 @@ sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg-turbo8-dev
 sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg62-turbo-dev
 ```
 
-It won't install pkgconfig metadata file though so create one in
+It won't install pkgconfig metadata file so create one in
 `/usr/local/lib/pkgconfig/dlib-1.pc` with the following content:
 
 ```
@@ -49,10 +49,9 @@ Requires:
 
 Try to install dlib/libjpeg with package manager of your distribution or
 [compile from sources](http://dlib.net/compile.html). Note that go-face won't
-work with old packages of dlib such as libdlib18.
-
-Or create issue with the name of your system and someone might help you with
-the installation process.
+work with old packages of dlib such as libdlib18. Alternatively create issue
+with the name of your system and someone might help you with the installation
+process.
 
 ## Models
 

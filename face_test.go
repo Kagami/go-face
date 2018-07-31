@@ -54,7 +54,7 @@ type IdolData struct {
 type TrainData struct {
 	samples []face.Descriptor
 	cats    []int32
-	labels  map[int]string
+	labels  []string
 }
 
 func getTPath(fname string) string {
@@ -90,7 +90,7 @@ func str2descr(s string) face.Descriptor {
 func getTrainData(idata *IdolData) (tdata *TrainData) {
 	var samples []face.Descriptor
 	var cats []int32
-	labels := make(map[int]string)
+	var labels []string
 
 	var catID int32
 	var prevIdolID string
@@ -101,7 +101,7 @@ func getTrainData(idata *IdolData) (tdata *TrainData) {
 		samples = append(samples, descriptor)
 		if iface.IdolID != prevIdolID {
 			catID++
-			labels[int(catID)] = iface.IdolID
+			labels = append(labels, iface.IdolID)
 		}
 		cats = append(cats, catID)
 		prevIdolID = iface.IdolID

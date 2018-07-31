@@ -3,33 +3,65 @@ package face_test
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 
 	"github.com/Kagami/go-face"
-)
-
-const (
-	// Path to directory with models.
-	modelDir = "testdata"
-
-	// Test image with 10 faces.
-	testImageTenFaces = "testdata/pristin.jpg"
 )
 
 // This example shows the basic usage of the package: create an
 // recognizer, recognize faces, classify them using few known ones.
 func Example_basic() {
-	rec, err := face.NewRecognizer(modelDir)
+	// Path to directory with models and test images. Here it's assumed it
+	// points to the <https://github.com/Kagami/go-face-testdata> clone.
+	dataDir := "testdata"
+	// Now init the recognizer.
+	rec, err := face.NewRecognizer(dataDir)
 	if err != nil {
 		log.Fatalf("Can't init face recognizer: %v", err)
 	}
 
-	faces, err := rec.RecognizeFile(testImageTenFaces)
+	// Test image with 10 faces.
+	testImagePristin := filepath.Join(dataDir, "pristin.jpg")
+	// Recognize faces on that image.
+	faces, err := rec.RecognizeFile(testImagePristin)
 	if err != nil {
-		log.Fatalf("Can't get faces: %v", err)
+		log.Fatalf("Can't recognize: %v", err)
 	}
-	numFaces := len(faces)
-	if numFaces != 10 {
-		log.Fatalf("Wrong number of faces: %d", numFaces)
+	if len(faces) != 10 {
+		log.Fatalf("Wrong number of faces")
 	}
-	fmt.Printf("Faces on %s: %v", testImageTenFaces, faces)
+
+	// Fill known samples. In the real world you would use a lot of images
+	// for each person to get better classification results but in our
+	// example we just get them from one big image.
+	var samples []face.Descriptor
+	var cats []int32
+	for i, f := range faces {
+		samples = append(samples, f.Descriptor)
+		// Each face is unique on that image so goes to its own category.
+		cats = append(cats, int32(i))
+	}
+	// Name the categories, i.e. people on the image.
+	labels := []string{
+		"Sungyeon", "Yehana", "Roa", "Eunwoo", "Xiyeon",
+		"Kyulkyung", "Nayoung", "Rena", "Kyla", "Yuha",
+	}
+	// Pass samples to the recognizer.
+	rec.SetSamples(samples, cats)
+
+	// Now let's try to classify some not yet known image.
+	testImageNayoung := filepath.Join(dataDir, "nayoung.jpg")
+	nayoungFace, err := rec.RecognizeSingleFile(testImageNayoung)
+	if err != nil {
+		log.Fatalf("Can't recognize: %v", err)
+	}
+	if nayoungFace == nil {
+		log.Fatalf("Not a single face on the image")
+	}
+	catID := rec.Classify(nayoungFace.Descriptor)
+	if catID < 0 {
+		log.Fatalf("Can't classify Nayoung")
+	}
+	// Finally print the classified label. It should be "Nayoung".
+	fmt.Println(labels[catID])
 }
