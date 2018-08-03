@@ -61,7 +61,7 @@ func Example_basic() {
 	}
 	catID := rec.Classify(nayoungFace.Descriptor)
 	if catID < 0 {
-		log.Fatalf("Can't classify Nayoung")
+		log.Fatalf("Can't classify")
 	}
 	// Finally print the classified label. It should be "Nayoung".
 	fmt.Println(labels[catID])

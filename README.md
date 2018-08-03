@@ -73,7 +73,7 @@ To install go-face in your $GOPATH:
 go get github.com/Kagami/go-face
 ```
 
-For further details see [GoDoc documentation for go-face](https://godoc.org/github.com/Kagami/go-face).
+For further details see [GoDoc documentation](https://godoc.org/github.com/Kagami/go-face).
 
 ## Test
 
