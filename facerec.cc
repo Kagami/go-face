@@ -65,6 +65,8 @@ public:
 		if (rects.size() == 0 || (max_faces > 0 && rects.size() > (size_t)max_faces))
 			return {std::move(rects), std::move(descrs)};
 
+		std::sort(rects.begin(), rects.end());
+
 		std::vector<matrix<rgb_pixel>> face_imgs;
 		for (const auto& rect : rects) {
 			auto shape = sp_(img, rect);

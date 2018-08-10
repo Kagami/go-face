@@ -118,10 +118,10 @@ func (rec *Recognizer) recognizeFile(imgPath string, maxFaces int) (face []Face,
 	return rec.recognize(imgData, maxFaces)
 }
 
-// Recognize returns all faces found on the provided image. Empty list
-// is returned if there are no faces, error is returned if there was
-// some error while decoding/processing image. Only JPEG format is
-// currently supported.
+// Recognize returns all faces found on the provided image, sorted from
+// left to right. Empty list is returned if there are no faces, error is
+// returned if there was some error while decoding/processing image.
+// Only JPEG format is currently supported.
 func (rec *Recognizer) Recognize(imgData []byte) (faces []Face, err error) {
 	return rec.recognize(imgData, 0)
 }
