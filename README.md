@@ -25,9 +25,9 @@ Latest versions of Ubuntu and Debian provide suitable dlib package so just run:
 
 ```bash
 # Ubuntu
-sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg-turbo8-dev
+sudo apt-get install libdlib-dev libopenblas-dev libjpeg-turbo8-dev
 # Debian
-sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg62-turbo-dev
+sudo apt-get install libdlib-dev libopenblas-dev libjpeg62-turbo-dev
 ```
 
 It won't install pkgconfig metadata file so create one in
