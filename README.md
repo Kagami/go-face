@@ -57,7 +57,15 @@ process.
 
 Currently `shape_predictor_5_face_landmarks.dat` and
 `dlib_face_recognition_resnet_model_v1.dat` are required. You may download them
-from [dlib-models](https://github.com/davisking/dlib-models) repo.
+from [dlib-models](https://github.com/davisking/dlib-models) repo:
+
+```bash
+mkdir models && cd models
+wget https://github.com/davisking/dlib-models/raw/master/shape_predictor_5_face_landmarks.dat.bz2
+bunzip2 shape_predictor_5_face_landmarks.dat.bz2
+wget https://github.com/davisking/dlib-models/raw/master/dlib_face_recognition_resnet_model_v1.dat.bz2
+bunzip2 dlib_face_recognition_resnet_model_v1.dat.bz2
+```
 
 ## Usage
 
