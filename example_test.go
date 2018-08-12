@@ -20,6 +20,8 @@ func Example_basic() {
 	if err != nil {
 		log.Fatalf("Can't init face recognizer: %v", err)
 	}
+	// Free the resources when you're finished.
+	defer rec.Close()
 
 	// Test image with 10 faces.
 	testImagePristin := filepath.Join(dataDir, "pristin.jpg")

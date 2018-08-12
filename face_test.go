@@ -181,3 +181,7 @@ func TestIdols(t *testing.T) {
 		})
 	}
 }
+
+func TestClose(t *testing.T) {
+	rec.Close()
+}
