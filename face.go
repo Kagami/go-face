@@ -121,13 +121,13 @@ func (rec *Recognizer) recognizeFile(imgPath string, maxFaces int) (face []Face,
 // Recognize returns all faces found on the provided image, sorted from
 // left to right. Empty list is returned if there are no faces, error is
 // returned if there was some error while decoding/processing image.
-// Only JPEG format is currently supported.
+// Only JPEG format is currently supported. Thread-safe.
 func (rec *Recognizer) Recognize(imgData []byte) (faces []Face, err error) {
 	return rec.recognize(imgData, 0)
 }
 
 // RecognizeSingle returns face if it's the only face on the image or
-// nil otherwise. Only JPEG format is currently supported.
+// nil otherwise. Only JPEG format is currently supported. Thread-safe.
 func (rec *Recognizer) RecognizeSingle(imgData []byte) (face *Face, err error) {
 	faces, err := rec.recognize(imgData, 1)
 	if err != nil || len(faces) != 1 {
@@ -153,6 +153,7 @@ func (rec *Recognizer) RecognizeSingleFile(imgPath string) (face *Face, err erro
 }
 
 // SetSamples sets known descriptors so you can classify the new ones.
+// Thread-safe.
 func (rec *Recognizer) SetSamples(samples []Descriptor, cats []int32) {
 	if len(samples) == 0 || len(samples) != len(cats) {
 		return
@@ -164,7 +165,7 @@ func (rec *Recognizer) SetSamples(samples []Descriptor, cats []int32) {
 }
 
 // Classify returns class ID for the given descriptor. Negative index is
-// returned if no match.
+// returned if no match. Thread-safe.
 func (rec *Recognizer) Classify(testSample Descriptor) int {
 	cTestSample := (*C.float)(unsafe.Pointer(&testSample))
 	return int(C.facerec_classify(rec.ptr, cTestSample))

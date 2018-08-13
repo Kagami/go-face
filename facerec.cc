@@ -1,3 +1,4 @@
+#include <shared_mutex>
 #include <dlib/dnn.h>
 #include <dlib/image_loader/image_loader.h>
 #include <dlib/image_processing/frontal_face_detector.h>
@@ -58,7 +59,10 @@ public:
 	// TODO(Kagami): Jittering?
 	std::pair<std::vector<rectangle>, std::vector<descriptor>>
 	Recognize(const matrix<rgb_pixel>& img, int max_faces) {
+		detector_mutex_.lock();
 		std::vector<rectangle> rects = detector_(img);
+		detector_mutex_.unlock();
+
 		std::vector<descriptor> descrs;
 
 		// Short circuit.
@@ -75,26 +79,34 @@ public:
 			face_imgs.push_back(std::move(face_chip));
 		}
 
+		net_mutex_.lock();
 		descrs = net_(face_imgs);
+		net_mutex_.unlock();
+
 		return {std::move(rects), std::move(descrs)};
 	}
 
 	void SetSamples(std::vector<sample_type> samples, std::unordered_map<int, int> cats) {
+		std::unique_lock<std::shared_mutex> lock(samples_mutex_);
 		samples_ = std::move(samples);
 		cats_ = std::move(cats);
 	}
 
 	int Classify(const sample_type& test_sample) {
+		std::shared_lock<std::shared_mutex> lock(samples_mutex_);
 		if (samples_.size() == 0)
 			return -1;
 		return classify(samples_, cats_, test_sample);
 	}
 private:
-	std::vector<sample_type> samples_;
-	std::unordered_map<int, int> cats_;
+	std::mutex detector_mutex_;
+	std::mutex net_mutex_;
+	std::shared_mutex samples_mutex_;
 	frontal_face_detector detector_;
 	shape_predictor sp_;
 	anet_type net_;
+	std::vector<sample_type> samples_;
+	std::unordered_map<int, int> cats_;
 };
 
 // Plain C interface for Go.
