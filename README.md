@@ -1,7 +1,10 @@
 # go-face [![Build Status](https://travis-ci.org/Kagami/go-face.svg?branch=master)](https://travis-ci.org/Kagami/go-face) [![GoDoc](https://godoc.org/github.com/Kagami/go-face?status.svg)](https://godoc.org/github.com/Kagami/go-face)
 
 go-face implements face recognition for Go using [dlib](http://dlib.net), a
-popular machine learning toolkit.
+popular machine learning toolkit. Read
+[Face recognition with Go](https://hackernoon.com/face-recognition-with-go-676a555b8a7e)
+article for some background details if you're new to
+[FaceNet](https://arxiv.org/abs/1503.03832) concept.
 
 ## Requirements
 
