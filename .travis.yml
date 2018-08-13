@@ -6,10 +6,14 @@ go:
 addons:
   apt:
     sources:
+      - ubuntu-toolchain-r-test
       - sourceline: "ppa:kagamih/dlib"
     packages:
+      - g++-7
       - libdlib-dev
       - libjpeg-turbo8-dev
+env:
+  - CXX=g++-7
 notifications:
   email:
     on_success: never
