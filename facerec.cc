@@ -57,11 +57,13 @@ public:
 	// TODO(Kagami): Jittering?
 	std::pair<std::vector<rectangle>, std::vector<descriptor>>
 	Recognize(const matrix<rgb_pixel>& img, int max_faces) {
-		detector_mutex_.lock();
-		std::vector<rectangle> rects = detector_(img);
-		detector_mutex_.unlock();
-
+		std::vector<rectangle> rects;
 		std::vector<descriptor> descrs;
+
+		{
+			std::lock_guard<std::mutex> lock(detector_mutex_);
+			rects = detector_(img);
+		}
 
 		// Short circuit.
 		if (rects.size() == 0 || (max_faces > 0 && rects.size() > (size_t)max_faces))
@@ -77,9 +79,10 @@ public:
 			face_imgs.push_back(std::move(face_chip));
 		}
 
-		net_mutex_.lock();
-		descrs = net_(face_imgs);
-		net_mutex_.unlock();
+		{
+			std::lock_guard<std::mutex> lock(net_mutex_);
+			descrs = net_(face_imgs);
+		}
 
 		return {std::move(rects), std::move(descrs)};
 	}
