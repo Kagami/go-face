@@ -128,11 +128,31 @@ func recognizeAndClassify(fpath string) (catID *int, err error) {
 	return
 }
 
+func TestSerializationError(t *testing.T) {
+	_, err := face.NewRecognizer("/notexist")
+	switch err.(type) {
+	case face.SerializationError:
+		// skip
+	default:
+		t.Fatalf("Wrong error: %v", err)
+	}
+}
+
 func TestInit(t *testing.T) {
 	var err error
 	rec, err = face.NewRecognizer("testdata")
 	if err != nil {
 		t.Fatalf("Can't init face recognizer: %v", err)
+	}
+}
+
+func TestImageLoadError(t *testing.T) {
+	_, err := rec.Recognize([]byte{1, 2, 3})
+	switch err.(type) {
+	case face.ImageLoadError:
+		// skip
+	default:
+		t.Fatalf("Wrong error: %v", err)
 	}
 }
 
