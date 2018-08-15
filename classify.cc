@@ -2,9 +2,9 @@
 #include "classify.h"
 
 int classify(
-	const std::vector<sample_type>& samples,
+	const std::vector<descriptor>& samples,
 	const std::unordered_map<int, int>& cats,
-	const sample_type& test_sample
+	const descriptor& test_sample
 ) {
 	std::vector<std::pair<int, double>> distances;
 	distances.reserve(samples.size());

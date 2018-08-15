@@ -36,8 +36,6 @@ using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
                             input_rgb_image_sized<150>
                             >>>>>>>>>>>>;
 
-typedef matrix<float,0,1> descriptor;
-
 static const size_t RECT_LEN = 4;
 static const size_t DESCR_LEN = 128;
 static const size_t RECT_SIZE = RECT_LEN * sizeof(long);
@@ -86,13 +84,13 @@ public:
 		return {std::move(rects), std::move(descrs)};
 	}
 
-	void SetSamples(std::vector<sample_type> samples, std::unordered_map<int, int> cats) {
+	void SetSamples(std::vector<descriptor> samples, std::unordered_map<int, int> cats) {
 		std::unique_lock<std::shared_mutex> lock(samples_mutex_);
 		samples_ = std::move(samples);
 		cats_ = std::move(cats);
 	}
 
-	int Classify(const sample_type& test_sample) {
+	int Classify(const descriptor& test_sample) {
 		std::shared_lock<std::shared_mutex> lock(samples_mutex_);
 		if (samples_.size() == 0)
 			return -1;
@@ -105,7 +103,7 @@ private:
 	frontal_face_detector detector_;
 	shape_predictor sp_;
 	anet_type net_;
-	std::vector<sample_type> samples_;
+	std::vector<descriptor> samples_;
 	std::unordered_map<int, int> cats_;
 };
 
@@ -167,28 +165,28 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 
 void facerec_set_samples(
 	facerec* rec,
-	const float* descriptors,
-	const int32_t* cats,
+	const float* c_samples,
+	const int32_t* c_cats,
 	int len
 ) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
-	std::vector<sample_type> samples;
+	std::vector<descriptor> samples;
 	samples.reserve(len);
 	for (int i = 0; i < len; i++) {
-		sample_type sample = mat(descriptors + i*DESCR_LEN, DESCR_LEN, 1);
+		descriptor sample = mat(c_samples + i*DESCR_LEN, DESCR_LEN, 1);
 		samples.push_back(std::move(sample));
 	}
-	std::unordered_map<int, int> cat_by_idx;
-	cat_by_idx.reserve(len);
+	std::unordered_map<int, int> cats;
+	cats.reserve(len);
 	for (int i = 0; i < len; i++) {
-		cat_by_idx[i] = cats[i];
+		cats[i] = c_cats[i];
 	}
-	cls->SetSamples(std::move(samples), std::move(cat_by_idx));
+	cls->SetSamples(std::move(samples), std::move(cats));
 }
 
-int facerec_classify(facerec* rec, const float* descriptor) {
+int facerec_classify(facerec* rec, const float* c_test_sample) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
-	sample_type test_sample = mat(descriptor, DESCR_LEN, 1);
+	descriptor test_sample = mat(c_test_sample, DESCR_LEN, 1);
 	return cls->Classify(test_sample);
 }
 

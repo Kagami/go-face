@@ -2,10 +2,10 @@
 
 #include <unordered_map>
 
-typedef dlib::matrix<float,128,1> sample_type;
+typedef dlib::matrix<float,0,1> descriptor;
 
 int classify(
-	const std::vector<sample_type>& samples,
+	const std::vector<descriptor>& samples,
 	const std::unordered_map<int, int>& cats,
-	const sample_type& test_sample
+	const descriptor& test_sample
 );
