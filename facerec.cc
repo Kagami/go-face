@@ -130,35 +130,37 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 	faceret* ret = (faceret*)calloc(1, sizeof(faceret));
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	matrix<rgb_pixel> img;
+	std::vector<rectangle> rects;
+	std::vector<descriptor> descrs;
 	try {
 		// TODO(Kagami): Support more file types?
 		load_mem_jpeg(img, img_data, len);
-		auto faces = cls->Recognize(img, max_faces);
-		auto rects = faces.first;
-		auto descrs = faces.second;
-		ret->num_faces = descrs.size();
-		if (ret->num_faces == 0)
-			return ret;
-		ret->rectangles = (long*)malloc(ret->num_faces * RECT_SIZE);
-		for (int i = 0; i < ret->num_faces; i++) {
-			long* dst = ret->rectangles + i * 4;
-			dst[0] = rects[i].left();
-			dst[1] = rects[i].top();
-			dst[2] = rects[i].right();
-			dst[3] = rects[i].bottom();
-		}
-		ret->descriptors = (float*)malloc(ret->num_faces * DESCR_SIZE);
-		for (int i = 0; i < ret->num_faces; i++) {
-			void* dst = (uint8_t*)(ret->descriptors) + i * DESCR_SIZE;
-			void* src = (void*)&descrs[i](0,0);
-			memcpy(dst, src, DESCR_SIZE);
-		}
+		std::tie(rects, descrs) = cls->Recognize(img, max_faces);
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;
+		return ret;
 	} catch (std::exception& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = UNKNOWN_ERROR;
+		return ret;
+	}
+	ret->num_faces = descrs.size();
+	if (ret->num_faces == 0)
+		return ret;
+	ret->rectangles = (long*)malloc(ret->num_faces * RECT_SIZE);
+	for (int i = 0; i < ret->num_faces; i++) {
+		long* dst = ret->rectangles + i * 4;
+		dst[0] = rects[i].left();
+		dst[1] = rects[i].top();
+		dst[2] = rects[i].right();
+		dst[3] = rects[i].bottom();
+	}
+	ret->descriptors = (float*)malloc(ret->num_faces * DESCR_SIZE);
+	for (int i = 0; i < ret->num_faces; i++) {
+		void* dst = (uint8_t*)(ret->descriptors) + i * DESCR_SIZE;
+		void* src = (void*)&descrs[i](0,0);
+		memcpy(dst, src, DESCR_SIZE);
 	}
 	return ret;
 }
