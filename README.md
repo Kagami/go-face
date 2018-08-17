@@ -48,6 +48,15 @@ Cflags: -I${includedir}
 Requires:
 ```
 
+### macOS
+
+Make sure you have [Homebrew](https://brew.sh) installed.
+
+```bash
+brew install dlib
+sed -i 's/^Libs: .*/& -lblas -llapack/' /usr/local/lib/pkgconfig/dlib-1.pc
+```
+
 ### Other systems
 
 Try to install dlib/libjpeg with package manager of your distribution or
