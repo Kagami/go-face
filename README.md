@@ -53,7 +53,7 @@ Requires:
 Make sure you have [Homebrew](https://brew.sh) installed.
 
 ```bash
-brew install dlib
+brew install pkg-config dlib
 sed -i 's/^Libs: .*/& -lblas -llapack/' /usr/local/lib/pkgconfig/dlib-1.pc
 ```
 
