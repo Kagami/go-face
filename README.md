@@ -57,6 +57,20 @@ brew install pkg-config dlib
 sed -i '' 's/^Libs: .*/& -lblas -llapack/' /usr/local/lib/pkgconfig/dlib-1.pc
 ```
 
+### Windows
+
+Make sure you have [MSYS2](https://www.msys2.org) installed.
+
+1. Run `MSYS2 MSYS` shell from Start menu
+2. Run `pacman -Syu` and if it asks you to close the shell do that
+3. Run `pacman -Syu` again
+4. Run `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-dlib mingw-w64-x86_64-pkg-config`
+5.1. If you already have Go and Git installed and available in PATH uncomment
+     `set MSYS2_PATH_TYPE=inherit` line in `msys2_shell.cmd` located in MSYS2
+     installation folder
+5.2. Otherwise run `pacman -S mingw-w64-x86_64-go git`
+6. Run `MSYS2 MinGW 64-bit` shell from Start menu to compile and use go-face
+
 ### Other systems
 
 Try to install dlib/libjpeg with package manager of your distribution or
