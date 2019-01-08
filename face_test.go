@@ -167,6 +167,14 @@ func TestNumFaces(t *testing.T) {
 	}
 }
 
+func TestEmptyClassify(t *testing.T) {
+	var sample face.Descriptor
+	id := rec.Classify(sample)
+	if id != -1 {
+		t.Fatalf("expected -1 but got %d", id)
+	}
+}
+
 func TestIdols(t *testing.T) {
 	idata, err := getIdolData()
 	if err != nil {
