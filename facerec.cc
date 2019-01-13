@@ -93,11 +93,9 @@ public:
 		cats_ = std::move(cats);
 	}
 
-	int Classify(const descriptor& test_sample) {
+	int Classify(const descriptor& test_sample, float tolerance) {
 		std::shared_lock<std::shared_mutex> lock(samples_mutex_);
-		if (samples_.size() == 0)
-			return -1;
-		return classify(samples_, cats_, test_sample);
+		return classify(samples_, cats_, test_sample, tolerance);
 	}
 private:
 	std::mutex detector_mutex_;
@@ -187,10 +185,10 @@ void facerec_set_samples(
 	cls->SetSamples(std::move(samples), std::move(cats));
 }
 
-int facerec_classify(facerec* rec, const float* c_test_sample) {
+int facerec_classify(facerec* rec, const float* c_test_sample, float tolerance) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	descriptor test_sample = mat(c_test_sample, DESCR_LEN, 1);
-	return cls->Classify(test_sample);
+	return cls->Classify(test_sample, tolerance);
 }
 
 void facerec_free(facerec* rec) {

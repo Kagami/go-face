@@ -115,16 +115,17 @@ func getTrainData(idata *IdolData) (tdata *TrainData) {
 	return
 }
 
-func recognizeAndClassify(fpath string) (catID *int, err error) {
+func recognizeAndClassify(fpath string, tolerance float32) (id int, err error) {
+	id = -1
 	f, err := rec.RecognizeSingleFile(fpath)
 	if err != nil || f == nil {
 		return
 	}
-	id := rec.Classify(f.Descriptor)
-	if id < 0 {
-		return
+	if tolerance < 0 {
+		id = rec.Classify(f.Descriptor)
+	} else {
+		id = rec.ClassifyThreshold(f.Descriptor, tolerance)
 	}
-	catID = &id
 	return
 }
 
@@ -170,8 +171,8 @@ func TestNumFaces(t *testing.T) {
 func TestEmptyClassify(t *testing.T) {
 	var sample face.Descriptor
 	id := rec.Classify(sample)
-	if id != -1 {
-		t.Fatalf("expected -1 but got %d", id)
+	if id >= 0 {
+		t.Fatalf("Shouldn't recognize but got %d category", id)
 	}
 }
 
@@ -189,15 +190,15 @@ func TestIdols(t *testing.T) {
 			expectedIname := names[0]
 			expectedBname := names[1]
 
-			catID, err := recognizeAndClassify(getTPath(fname))
+			catID, err := recognizeAndClassify(getTPath(fname), -1)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("Can't recognize: %v", err)
 			}
-			if catID == nil {
+			if catID < 0 {
 				t.Errorf("%s: expected “%s” but not recognized", fname, expected)
 				return
 			}
-			idolID := tdata.labels[*catID]
+			idolID := tdata.labels[catID]
 			idol := idata.byID[idolID]
 			actualIname := idol.Name
 			actualBname := idol.BandName
@@ -207,6 +208,23 @@ func TestIdols(t *testing.T) {
 				t.Errorf("%s: expected “%s” but got “%s”", fname, expected, actual)
 			}
 		})
+	}
+}
+
+func TestClassifyThreshold(t *testing.T) {
+	id, err := recognizeAndClassify(getTPath("nana.jpg"), 0.8)
+	if err != nil {
+		t.Fatalf("Can't recognize: %v", err)
+	}
+	if id >= 0 {
+		t.Fatalf("Shouldn't recognize but got %d category", id)
+	}
+	id, err = recognizeAndClassify(getTPath("nana.jpg"), 0.1)
+	if err != nil {
+		t.Fatalf("Can't recognize: %v", err)
+	}
+	if id < 0 {
+		t.Fatalf("Should have recognized but got %d category", id)
 	}
 }
 
