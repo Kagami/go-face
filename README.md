@@ -33,6 +33,7 @@ sudo apt-get install libdlib-dev libopenblas-dev libjpeg-turbo8-dev
 sudo apt-get install libdlib-dev libopenblas-dev libjpeg62-turbo-dev
 ```
 
+**ONLY FOR UBUNTU 18.10+ AND DEBIAN SID:**  
 It won't install pkgconfig metadata file so create one in
 `/usr/local/lib/pkgconfig/dlib-1.pc` with the following content:
 
