@@ -22,7 +22,7 @@ const (
 // A Recognizer creates face descriptors for provided images and
 // classifies them into categories.
 type Recognizer struct {
-	ptr *_Ctype_struct_facerec
+	ptr *C.facerec
 }
 
 // Face holds coordinates and descriptor of the human face.
