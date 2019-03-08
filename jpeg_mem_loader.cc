@@ -39,10 +39,10 @@ void load_mem_jpeg(dlib::matrix<dlib::rgb_pixel>& img, const uint8_t* img_data, 
 	}
 
 	jpeg_create_decompress(&cinfo);
-#if JPEG_LIB_VERSION >= 80
-	jpeg_mem_src(&cinfo, (uint8_t*)img_data, len);
-#else
+#if defined(LIBJPEG_TURBO_VERSION_NUMBER) && LIBJPEG_TURBO_VERSION_NUMBER >= 1004090
 	jpeg_mem_src(&cinfo, img_data, len);
+#else
+	jpeg_mem_src(&cinfo, (uint8_t*)img_data, len);
 #endif
 	jpeg_read_header(&cinfo, TRUE);
 	jpeg_start_decompress(&cinfo);
