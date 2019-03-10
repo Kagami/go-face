@@ -179,6 +179,12 @@ func (rec *Recognizer) ClassifyThreshold(testSample Descriptor, tolerance float3
 	return int(C.facerec_classify(rec.ptr, cTestSample, cTolerance))
 }
 
+func (rec *Recognizer) Distance(sample1 Descriptor, sample2 Descriptor) float32 {
+	cSample1 := (*C.float)(unsafe.Pointer(&sample1))
+	cSample2 := (*C.float)(unsafe.Pointer(&sample2))
+	return float32(C.facerec_distance(rec.ptr, cSample1, cSample2))
+}
+
 // Close frees resources taken by the Recognizer. Safe to call multiple
 // times. Don't use Recognizer after close call.
 func (rec *Recognizer) Close() {

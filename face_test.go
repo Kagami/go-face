@@ -10,7 +10,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/Kagami/go-face"
+	face "github.com/Kagami/go-face"
 )
 
 var (
@@ -225,6 +225,17 @@ func TestClassifyThreshold(t *testing.T) {
 	}
 	if id < 0 {
 		t.Fatalf("Should have recognized but got %d category", id)
+	}
+}
+
+func TestDistance(t *testing.T) {
+	faces, err := rec.RecognizeFile(getTPath("pristin.jpg"))
+	if err != nil {
+		t.Fatalf("Can't get faces: %v", err)
+	}
+	dist := rec.Distance(faces[0].Descriptor, faces[0].Descriptor)
+	if dist != 0 {
+		t.Fatalf("Distance between the same face should be 0 but was %f", dist)
 	}
 }
 

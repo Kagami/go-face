@@ -63,3 +63,11 @@ int classify(
 	// printf("Found cat with max hits: %d\n", hit->first); fflush(stdout);
 	return hit->first;
 }
+
+float distance(
+	const descriptor& sample1,
+	const descriptor& sample2
+) {
+	auto dist_func = dlib::squared_euclidean_distance();
+	return dist_func(sample1, sample2);
+}

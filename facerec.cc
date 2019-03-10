@@ -97,6 +97,10 @@ public:
 		std::shared_lock<std::shared_mutex> lock(samples_mutex_);
 		return classify(samples_, cats_, test_sample, tolerance);
 	}
+
+	float Distanace(const descriptor& sample1, const descriptor& sample2) {
+		return distance(sample1, sample2);
+	}
 private:
 	std::mutex detector_mutex_;
 	std::mutex net_mutex_;
@@ -189,6 +193,13 @@ int facerec_classify(facerec* rec, const float* c_test_sample, float tolerance) 
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	descriptor test_sample = mat(c_test_sample, DESCR_LEN, 1);
 	return cls->Classify(test_sample, tolerance);
+}
+
+float facerec_distance(facerec* rec, const float* c_sample1, const float* c_sample2) {
+	FaceRec* cls = (FaceRec*)(rec->cls);
+	descriptor sample1 = mat(c_sample1, DESCR_LEN, 1);
+	descriptor sample2 = mat(c_sample2, DESCR_LEN, 1);
+	return cls->Distanace(sample1, sample2);
 }
 
 void facerec_free(facerec* rec) {

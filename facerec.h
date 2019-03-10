@@ -28,6 +28,7 @@ facerec* facerec_init(const char* model_dir);
 faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int max_faces);
 void facerec_set_samples(facerec* rec, const float* descriptors, const int32_t* cats, int len);
 int facerec_classify(facerec* rec, const float* descriptor, float tolerance);
+float facerec_distance(facerec* rec, const float* descriptor1, const float* descriptor2);
 void facerec_free(facerec* rec);
 
 #ifdef __cplusplus

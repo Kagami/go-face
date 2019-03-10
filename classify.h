@@ -10,3 +10,8 @@ int classify(
 	const descriptor& test_sample,
 	float tolerance
 );
+
+float distance(
+	const descriptor& sample1,
+	const descriptor& sample2
+);
