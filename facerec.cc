@@ -87,7 +87,7 @@ public:
 		return {std::move(rects), std::move(descrs)};
 	}
 
-	void SetSamples(std::vector<descriptor>&& samples, std::unordered_map<int, int>&& cats) {
+	void SetSamples(std::vector<descriptor>&& samples, std::vector<int>&& cats) {
 		std::unique_lock<std::shared_mutex> lock(samples_mutex_);
 		samples_ = std::move(samples);
 		cats_ = std::move(cats);
@@ -105,7 +105,7 @@ private:
 	shape_predictor sp_;
 	anet_type net_;
 	std::vector<descriptor> samples_;
-	std::unordered_map<int, int> cats_;
+	std::vector<int> cats_;
 };
 
 // Plain C interface for Go.
@@ -177,11 +177,7 @@ void facerec_set_samples(
 		descriptor sample = mat(c_samples + i*DESCR_LEN, DESCR_LEN, 1);
 		samples.push_back(std::move(sample));
 	}
-	std::unordered_map<int, int> cats;
-	cats.reserve(len);
-	for (int i = 0; i < len; i++) {
-		cats[i] = c_cats[i];
-	}
+	std::vector<int> cats(c_cats, c_cats + len);
 	cls->SetSamples(std::move(samples), std::move(cats));
 }
 
