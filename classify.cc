@@ -16,9 +16,9 @@ int classify(
 	int idx = 0;
 	for (const auto& sample : samples) {
 		float dist = dist_func(sample, test_sample);
-		if (dist < tolerance)
-			continue;
-		distances.push_back({idx, dist});
+		if (dist >= tolerance) {
+			distances.push_back({idx, dist});
+		}
 		idx++;
 	}
 
