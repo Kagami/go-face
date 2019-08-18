@@ -171,8 +171,8 @@ func (rec *Recognizer) Classify(testSample Descriptor) int {
 	return int(C.facerec_classify(rec.ptr, cTestSample, -1))
 }
 
-// Same as Classify but allows to specify how much distance between
-// faces to consider it a match. Start with 0.6 if not sure.
+// Same as Classify but allows to specify max distance between faces to
+// consider it a match. Start with 0.6 if not sure.
 func (rec *Recognizer) ClassifyThreshold(testSample Descriptor, tolerance float32) int {
 	cTestSample := (*C.float)(unsafe.Pointer(&testSample))
 	cTolerance := C.float(tolerance)

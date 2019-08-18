@@ -212,14 +212,14 @@ func TestIdols(t *testing.T) {
 }
 
 func TestClassifyThreshold(t *testing.T) {
-	id, err := recognizeAndClassify(getTPath("nana.jpg"), 0.8)
+	id, err := recognizeAndClassify(getTPath("nana.jpg"), 0.1)
 	if err != nil {
 		t.Fatalf("Can't recognize: %v", err)
 	}
 	if id >= 0 {
 		t.Fatalf("Shouldn't recognize but got %d category", id)
 	}
-	id, err = recognizeAndClassify(getTPath("nana.jpg"), 0.1)
+	id, err = recognizeAndClassify(getTPath("nana.jpg"), 0.8)
 	if err != nil {
 		t.Fatalf("Can't recognize: %v", err)
 	}
