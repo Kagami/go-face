@@ -204,6 +204,17 @@ To fetch test data and run tests:
 make test
 ```
 
+## FAQ
+
+### How to improve recognition accuracy
+
+There are few suggestions:
+
+* Try different tolerance values of `ClassifyThreshold`
+* Implement better classify heuristics (see [classify.cc](classify.cc))
+* Implement [jittering](https://github.com/davisking/dlib/blob/v19.15/examples/dnn_face_recognition_ex.cpp#L182-L190)
+* [Train](https://blog.dlib.net/2017/02/high-quality-face-recognition-with-deep.html) network (`dlib_face_recognition_resnet_model_v1.dat`) on your own test data
+
 ## License
 
 go-face is licensed under [CC0](COPYING).
