@@ -44,6 +44,11 @@ static const size_t RECT_SIZE = RECT_LEN * sizeof(long);
 static const size_t DESCR_SIZE = DESCR_LEN * sizeof(float);
 static const size_t SHAPE_SIZE = SHAPE_LEN * sizeof(long);
 
+std::vector<matrix<rgb_pixel>> jitter_image(
+    const matrix<rgb_pixel>& img,
+    int count
+);
+
 class FaceRec {
 public:
 	FaceRec(const char* model_dir) {
@@ -57,9 +62,8 @@ public:
 		deserialize(resnet_path) >> net_;
 	}
 
-	// TODO(Kagami): Jittering?
 	std::tuple<std::vector<rectangle>, std::vector<descriptor>, std::vector<full_object_detection>>
-	Recognize(const matrix<rgb_pixel>& img, int max_faces) {
+	Recognize(const matrix<rgb_pixel>& img, int max_faces, int  jittering) {
 		std::vector<rectangle> rects;
 		std::vector<descriptor> descrs;
 		std::vector<full_object_detection> shapes;
@@ -81,12 +85,18 @@ public:
 			shapes.push_back(shape);
 			matrix<rgb_pixel> face_chip;
 			extract_image_chip(img, get_face_chip_details(shape, 150, 0.2), face_chip);
-			face_imgs.push_back(std::move(face_chip));
+			if ( jittering > 0) {
+				std::lock_guard<std::mutex> lock(net_mutex_);
+				descrs.push_back(mean(mat(net_(jitter_image(std::move(face_chip),jittering)))));
+			}
+			else
+				face_imgs.push_back(std::move(face_chip));
 		}
 
 		{
 			std::lock_guard<std::mutex> lock(net_mutex_);
-			descrs = net_(face_imgs);
+			if ( jittering <= 0)
+				descrs = net_(face_imgs);
 		}
 
 		return {std::move(rects), std::move(descrs), std::move(shapes)};
@@ -130,7 +140,7 @@ facerec* facerec_init(const char* model_dir) {
 	return rec;
 }
 
-faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int max_faces) {
+faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int max_faces,int jittering) {
 	faceret* ret = (faceret*)calloc(1, sizeof(faceret));
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	matrix<rgb_pixel> img;
@@ -141,7 +151,7 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 	try {
 		// TODO(Kagami): Support more file types?
 		load_mem_jpeg(img, img_data, len);
-		std::tie(rects, descrs, shapes) = cls->Recognize(img, max_faces);
+		std::tie(rects, descrs, shapes) = cls->Recognize(img, max_faces, jittering);
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;
@@ -221,4 +231,21 @@ float squared_euclidean_distance(const float* c_sample, const float* c_test_samp
 	descriptor test_sample = mat(c_test_sample, DESCR_LEN, 1);
 	auto dist_func = dlib::squared_euclidean_distance();
 	return dist_func(sample, test_sample);
+}
+
+std::vector<matrix<rgb_pixel>> jitter_image(
+    const matrix<rgb_pixel>& img,
+    int count
+)
+{
+    // All this function does is make count copies of img, all slightly jittered by being
+    // zoomed, rotated, and translated a little bit differently. They are also randomly
+    // mirrored left to right.
+    thread_local dlib::rand rnd;
+
+    std::vector<matrix<rgb_pixel>> crops;
+    for (int i = 0; i < count; ++i)
+        crops.push_back(jitter_image(img,rnd));
+
+    return crops;
 }
