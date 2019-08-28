@@ -60,10 +60,14 @@ public:
 
 		deserialize(shape_predictor_path) >> sp_;
 		deserialize(resnet_path) >> net_;
+
+		jittering = 0;
+		size = 150;
+		padding = 0.2;
 	}
 
 	std::tuple<std::vector<rectangle>, std::vector<descriptor>, std::vector<full_object_detection>>
-	Recognize(const matrix<rgb_pixel>& img, int max_faces, int  jittering) {
+	Recognize(const matrix<rgb_pixel>& img, int max_faces) {
 		std::vector<rectangle> rects;
 		std::vector<descriptor> descrs;
 		std::vector<full_object_detection> shapes;
@@ -84,7 +88,7 @@ public:
 			auto shape = sp_(img, rect);
 			shapes.push_back(shape);
 			matrix<rgb_pixel> face_chip;
-			extract_image_chip(img, get_face_chip_details(shape, 150, 0.2), face_chip);
+			extract_image_chip(img, get_face_chip_details(shape, size, padding), face_chip);
 			if ( jittering > 0) {
 				std::lock_guard<std::mutex> lock(net_mutex_);
 				descrs.push_back(mean(mat(net_(jitter_image(std::move(face_chip),jittering)))));
@@ -112,6 +116,12 @@ public:
 		std::shared_lock<std::shared_mutex> lock(samples_mutex_);
 		return classify(samples_, cats_, test_sample, tolerance);
 	}
+
+    void Config(unsigned long new_size, double new_padding, int new_jittering) {
+        size = new_size;
+        padding = new_padding;
+        jittering = new_jittering;
+    }
 private:
 	std::mutex detector_mutex_;
 	std::mutex net_mutex_;
@@ -121,6 +131,9 @@ private:
 	anet_type net_;
 	std::vector<descriptor> samples_;
 	std::vector<int> cats_;
+	int jittering;
+	unsigned long size;
+	double padding;
 };
 
 // Plain C interface for Go.
@@ -139,8 +152,12 @@ facerec* facerec_init(const char* model_dir) {
 	}
 	return rec;
 }
+void facerec_config(facerec* rec, unsigned long size, double padding, int jittering) {
+	FaceRec* cls = (FaceRec*)(rec->cls);
+	cls->Config(size,padding,jittering);
+}
 
-faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int max_faces,int jittering) {
+faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int max_faces) {
 	faceret* ret = (faceret*)calloc(1, sizeof(faceret));
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	matrix<rgb_pixel> img;
@@ -151,7 +168,7 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 	try {
 		// TODO(Kagami): Support more file types?
 		load_mem_jpeg(img, img_data, len);
-		std::tie(rects, descrs, shapes) = cls->Recognize(img, max_faces, jittering);
+		std::tie(rects, descrs, shapes) = cls->Recognize(img, max_faces);
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;
