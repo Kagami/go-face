@@ -20,6 +20,8 @@ typedef struct faceret {
 	int num_faces;
 	long* rectangles;
 	float* descriptors;
+	int num_shapes;
+	long* shapes;
 	const char* err_str;
 	err_code err_code;
 } faceret;

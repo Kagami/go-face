@@ -37,10 +37,12 @@ using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
                             input_rgb_image_sized<150>
                             >>>>>>>>>>>>;
 
+static const size_t SHAPE_LEN = 2;
 static const size_t RECT_LEN = 4;
 static const size_t DESCR_LEN = 128;
 static const size_t RECT_SIZE = RECT_LEN * sizeof(long);
 static const size_t DESCR_SIZE = DESCR_LEN * sizeof(float);
+static const size_t SHAPE_SIZE = SHAPE_LEN * sizeof(long);
 
 class FaceRec {
 public:
@@ -56,10 +58,11 @@ public:
 	}
 
 	// TODO(Kagami): Jittering?
-	std::pair<std::vector<rectangle>, std::vector<descriptor>>
+	std::tuple<std::vector<rectangle>, std::vector<descriptor>, std::vector<full_object_detection>>
 	Recognize(const matrix<rgb_pixel>& img, int max_faces) {
 		std::vector<rectangle> rects;
 		std::vector<descriptor> descrs;
+		std::vector<full_object_detection> shapes;
 
 		{
 			std::lock_guard<std::mutex> lock(detector_mutex_);
@@ -68,15 +71,16 @@ public:
 
 		// Short circuit.
 		if (rects.size() == 0 || (max_faces > 0 && rects.size() > (size_t)max_faces))
-			return {std::move(rects), std::move(descrs)};
+			return {std::move(rects), std::move(descrs), std::move(shapes)};
 
 		std::sort(rects.begin(), rects.end());
 
 		std::vector<matrix<rgb_pixel>> face_imgs;
 		for (const auto& rect : rects) {
 			auto shape = sp_(img, rect);
+			shapes.push_back(shape);
 			matrix<rgb_pixel> face_chip;
-			extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
+			extract_image_chip(img, get_face_chip_details(shape, 150, 0.2), face_chip);
 			face_imgs.push_back(std::move(face_chip));
 		}
 
@@ -85,7 +89,7 @@ public:
 			descrs = net_(face_imgs);
 		}
 
-		return {std::move(rects), std::move(descrs)};
+		return {std::move(rects), std::move(descrs), std::move(shapes)};
 	}
 
 	void SetSamples(std::vector<descriptor>&& samples, std::vector<int>&& cats) {
@@ -132,10 +136,12 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 	matrix<rgb_pixel> img;
 	std::vector<rectangle> rects;
 	std::vector<descriptor> descrs;
+	std::vector<full_object_detection> shapes;
+
 	try {
 		// TODO(Kagami): Support more file types?
 		load_mem_jpeg(img, img_data, len);
-		std::tie(rects, descrs) = cls->Recognize(img, max_faces);
+		std::tie(rects, descrs, shapes) = cls->Recognize(img, max_faces);
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;
@@ -146,11 +152,12 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 		return ret;
 	}
 	ret->num_faces = descrs.size();
+
 	if (ret->num_faces == 0)
 		return ret;
 	ret->rectangles = (long*)malloc(ret->num_faces * RECT_SIZE);
 	for (int i = 0; i < ret->num_faces; i++) {
-		long* dst = ret->rectangles + i * 4;
+		long* dst = ret->rectangles + i * RECT_LEN;
 		dst[0] = rects[i].left();
 		dst[1] = rects[i].top();
 		dst[2] = rects[i].right();
@@ -161,6 +168,16 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 		void* dst = (uint8_t*)(ret->descriptors) + i * DESCR_SIZE;
 		void* src = (void*)&descrs[i](0,0);
 		memcpy(dst, src, DESCR_SIZE);
+	}
+	ret->num_shapes = shapes[0].num_parts();
+	ret->shapes = (long*)malloc(ret->num_faces * ret->num_shapes * SHAPE_SIZE);
+	for (int i = 0; i < 	ret->num_faces; i++) {
+		long* dst = ret->shapes + i * ret->num_shapes * SHAPE_LEN;
+		auto shape = shapes[i];
+		for (long unsigned int j = 0;j < shape.num_parts(); j++) {
+			dst[j * SHAPE_LEN] = shape.part(j).x();
+			dst[(j * SHAPE_LEN) + 1] = shape.part(j).y();
+        }
 	}
 	return ret;
 }

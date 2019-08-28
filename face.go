@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	shapeLen = 2
 	rectLen  = 4
 	descrLen = 128
 )
@@ -28,6 +29,7 @@ type Recognizer struct {
 // Face holds coordinates and descriptor of the human face.
 type Face struct {
 	Rectangle  image.Rectangle
+	Shapes     []image.Point
 	Descriptor Descriptor
 }
 
@@ -35,8 +37,8 @@ type Face struct {
 type Descriptor [128]float32
 
 // New creates new face with the provided parameters.
-func New(r image.Rectangle, d Descriptor) Face {
-	return Face{r, d}
+func New(r image.Rectangle, s []image.Point, d Descriptor) Face {
+	return Face{r, s, d}
 }
 
 // NewRecognizer returns a new recognizer interface. modelDir points to
