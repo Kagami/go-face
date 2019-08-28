@@ -106,6 +106,13 @@ func (rec *Recognizer) recognize(imgData []byte, maxFaces int) (faces []Face, er
 	return
 }
 
+func Squared_euclidean_distance(sample Descriptor, testSample Descriptor) (distance float32) {
+	cTestSample := (*C.float)(unsafe.Pointer(&testSample))
+	cSample := (*C.float)(unsafe.Pointer(&sample))
+
+	return float32(C.squared_euclidean_distance(cSample, cTestSample))
+}
+
 func (rec *Recognizer) recognizeFile(imgPath string, maxFaces int) (face []Face, err error) {
 	fd, err := os.Open(imgPath)
 	if err != nil {

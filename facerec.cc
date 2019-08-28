@@ -2,6 +2,7 @@
 #include <dlib/dnn.h>
 #include <dlib/image_loader/image_loader.h>
 #include <dlib/image_processing/frontal_face_detector.h>
+#include <dlib/graph_utils.h>
 #include "facerec.h"
 #include "jpeg_mem_loader.h"
 #include "classify.h"
@@ -196,4 +197,11 @@ void facerec_free(facerec* rec) {
 		}
 		free(rec);
 	}
+}
+
+float squared_euclidean_distance(const float* c_sample, const float* c_test_sample) {
+	descriptor sample = mat(c_sample, DESCR_LEN, 1);
+	descriptor test_sample = mat(c_test_sample, DESCR_LEN, 1);
+	auto dist_func = dlib::squared_euclidean_distance();
+	return dist_func(sample, test_sample);
 }

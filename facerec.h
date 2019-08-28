@@ -29,6 +29,7 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 void facerec_set_samples(facerec* rec, const float* descriptors, const int32_t* cats, int len);
 int facerec_classify(facerec* rec, const float* descriptor, float tolerance);
 void facerec_free(facerec* rec);
+float squared_euclidean_distance(const float* sample,const float* test_sample);
 
 #ifdef __cplusplus
 }
