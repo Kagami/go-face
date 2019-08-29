@@ -261,13 +261,6 @@ void facerec_free(facerec* rec) {
 	}
 }
 
-float squared_euclidean_distance(const float* c_sample, const float* c_test_sample) {
-	descriptor sample = mat(c_sample, DESCR_LEN, 1);
-	descriptor test_sample = mat(c_test_sample, DESCR_LEN, 1);
-	auto dist_func = dlib::squared_euclidean_distance();
-	return dist_func(sample, test_sample);
-}
-
 static std::vector<matrix<rgb_pixel>> jitter_image(
     const matrix<rgb_pixel>& img,
     int count

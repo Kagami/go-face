@@ -10,6 +10,7 @@ import "C"
 import (
 	"image"
 	"io/ioutil"
+	"math"
 	"os"
 	"unsafe"
 )
@@ -35,6 +36,14 @@ type Face struct {
 
 // Descriptor holds 128-dimensional feature vector.
 type Descriptor [128]float32
+
+func SquaredEuclideanDistance(d1 Descriptor, d2 Descriptor) (sum float64) {
+	for i := range d1 {
+		sum = sum + math.Pow(float64(d2[i]-d1[i]), 2)
+	}
+
+	return sum
+}
 
 // New creates new face with the provided parameters.
 func New(r image.Rectangle, d Descriptor) Face {
@@ -122,12 +131,6 @@ func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces
 		faces = append(faces, face)
 	}
 	return
-}
-
-func SquaredEuclideanDistance(sample Descriptor, testSample Descriptor) (distance float32) {
-	cTestSample := (*C.float)(unsafe.Pointer(&testSample))
-	cSample := (*C.float)(unsafe.Pointer(&sample))
-	return float32(C.squared_euclidean_distance(cSample, cTestSample))
 }
 
 func (rec *Recognizer) recognizeFile(type_ int, imgPath string, maxFaces int) (face []Face, err error) {
