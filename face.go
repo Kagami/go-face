@@ -67,7 +67,7 @@ func (rec *Recognizer) Config(size int, padding float32, jittering int) {
 	C.facerec_config(rec.ptr, cSize, cPadding, cJittering)
 }
 
-func (rec *Recognizer) recognize(imgData []byte, maxFaces int) (faces []Face, err error) {
+func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces []Face, err error) {
 	if len(imgData) == 0 {
 		err = ImageLoadError("Empty image")
 		return
@@ -76,7 +76,9 @@ func (rec *Recognizer) recognize(imgData []byte, maxFaces int) (faces []Face, er
 	cLen := C.int(len(imgData))
 	cMaxFaces := C.int(maxFaces)
 
-	ret := C.facerec_recognize(rec.ptr, cImgData, cLen, cMaxFaces)
+	cType := C.int(type_)
+
+	ret := C.facerec_recognize(rec.ptr, cImgData, cLen, cMaxFaces, cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -123,7 +125,7 @@ func Squared_euclidean_distance(sample Descriptor, testSample Descriptor) (dista
 	return float32(C.squared_euclidean_distance(cSample, cTestSample))
 }
 
-func (rec *Recognizer) recognizeFile(imgPath string, maxFaces int) (face []Face, err error) {
+func (rec *Recognizer) recognizeFile(type_ int, imgPath string, maxFaces int) (face []Face, err error) {
 	fd, err := os.Open(imgPath)
 	if err != nil {
 		return
@@ -132,21 +134,21 @@ func (rec *Recognizer) recognizeFile(imgPath string, maxFaces int) (face []Face,
 	if err != nil {
 		return
 	}
-	return rec.recognize(imgData, maxFaces)
+	return rec.recognize(type_, imgData, maxFaces)
 }
 
 // Recognize returns all faces found on the provided image, sorted from
 // left to right. Empty list is returned if there are no faces, error is
 // returned if there was some error while decoding/processing image.
 // Only JPEG format is currently supported. Thread-safe.
-func (rec *Recognizer) Recognize(imgData []byte) (faces []Face, err error) {
-	return rec.recognize(imgData, 0)
+func (rec *Recognizer) Recognize(type_ int, imgData []byte) (faces []Face, err error) {
+	return rec.recognize(type_, imgData, 0)
 }
 
 // RecognizeSingle returns face if it's the only face on the image or
 // nil otherwise. Only JPEG format is currently supported. Thread-safe.
-func (rec *Recognizer) RecognizeSingle(imgData []byte) (face *Face, err error) {
-	faces, err := rec.recognize(imgData, 1)
+func (rec *Recognizer) RecognizeSingle(type_ int, imgData []byte) (face *Face, err error) {
+	faces, err := rec.recognize(type_, imgData, 1)
 	if err != nil || len(faces) != 1 {
 		return
 	}
@@ -155,13 +157,13 @@ func (rec *Recognizer) RecognizeSingle(imgData []byte) (face *Face, err error) {
 }
 
 // Same as Recognize but accepts image path instead.
-func (rec *Recognizer) RecognizeFile(imgPath string) (faces []Face, err error) {
-	return rec.recognizeFile(imgPath, 0)
+func (rec *Recognizer) RecognizeFile(type_ int, imgPath string) (faces []Face, err error) {
+	return rec.recognizeFile(type_, imgPath, 0)
 }
 
 // Same as RecognizeSingle but accepts image path instead.
-func (rec *Recognizer) RecognizeSingleFile(imgPath string) (face *Face, err error) {
-	faces, err := rec.recognizeFile(imgPath, 1)
+func (rec *Recognizer) RecognizeSingleFile(type_ int, imgPath string) (face *Face, err error) {
+	faces, err := rec.recognizeFile(type_, imgPath, 1)
 	if err != nil || len(faces) != 1 {
 		return
 	}
