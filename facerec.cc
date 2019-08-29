@@ -52,7 +52,7 @@ static const size_t RECT_SIZE = RECT_LEN * sizeof(long);
 static const size_t DESCR_SIZE = DESCR_LEN * sizeof(float);
 static const size_t SHAPE_SIZE = SHAPE_LEN * sizeof(long);
 
-std::vector<matrix<rgb_pixel>> jitter_image(
+static std::vector<matrix<rgb_pixel>> jitter_image(
     const matrix<rgb_pixel>& img,
     int count
 );
@@ -268,7 +268,7 @@ float squared_euclidean_distance(const float* c_sample, const float* c_test_samp
 	return dist_func(sample, test_sample);
 }
 
-std::vector<matrix<rgb_pixel>> jitter_image(
+static std::vector<matrix<rgb_pixel>> jitter_image(
     const matrix<rgb_pixel>& img,
     int count
 )

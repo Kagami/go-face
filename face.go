@@ -29,16 +29,20 @@ type Recognizer struct {
 // Face holds coordinates and descriptor of the human face.
 type Face struct {
 	Rectangle  image.Rectangle
-	Shapes     []image.Point
 	Descriptor Descriptor
+	Shapes     []image.Point
 }
 
 // Descriptor holds 128-dimensional feature vector.
 type Descriptor [128]float32
 
 // New creates new face with the provided parameters.
-func New(r image.Rectangle, s []image.Point, d Descriptor) Face {
-	return Face{r, s, d}
+func New(r image.Rectangle, d Descriptor) Face {
+	return Face{r, d, []image.Point{}}
+}
+
+func NewWithShape(r image.Rectangle, s []image.Point, d Descriptor) Face {
+	return Face{r, d, s}
 }
 
 // NewRecognizer returns a new recognizer interface. modelDir points to
@@ -60,11 +64,13 @@ func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
 	return
 }
 
-func (rec *Recognizer) Config(size int, padding float32, jittering int) {
+func NewRecognizerWithConfig(modelDir string, size int, padding float32, jittering int) (rec *Recognizer, err error) {
+	rec, err = NewRecognizer(modelDir)
 	cSize := C.ulong(size)
 	cPadding := C.double(padding)
 	cJittering := C.int(jittering)
 	C.facerec_config(rec.ptr, cSize, cPadding, cJittering)
+	return
 }
 
 func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces []Face, err error) {
@@ -118,10 +124,9 @@ func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces
 	return
 }
 
-func Squared_euclidean_distance(sample Descriptor, testSample Descriptor) (distance float32) {
+func SquaredEuclideanDistance(sample Descriptor, testSample Descriptor) (distance float32) {
 	cTestSample := (*C.float)(unsafe.Pointer(&testSample))
 	cSample := (*C.float)(unsafe.Pointer(&sample))
-
 	return float32(C.squared_euclidean_distance(cSample, cTestSample))
 }
 
@@ -141,14 +146,27 @@ func (rec *Recognizer) recognizeFile(type_ int, imgPath string, maxFaces int) (f
 // left to right. Empty list is returned if there are no faces, error is
 // returned if there was some error while decoding/processing image.
 // Only JPEG format is currently supported. Thread-safe.
-func (rec *Recognizer) Recognize(type_ int, imgData []byte) (faces []Face, err error) {
-	return rec.recognize(type_, imgData, 0)
+func (rec *Recognizer) Recognize(imgData []byte) (faces []Face, err error) {
+	return rec.recognize(0, imgData, 0)
+}
+
+func (rec *Recognizer) RecognizeCNN(imgData []byte) (faces []Face, err error) {
+	return rec.recognize(1, imgData, 0)
 }
 
 // RecognizeSingle returns face if it's the only face on the image or
 // nil otherwise. Only JPEG format is currently supported. Thread-safe.
-func (rec *Recognizer) RecognizeSingle(type_ int, imgData []byte) (face *Face, err error) {
-	faces, err := rec.recognize(type_, imgData, 1)
+func (rec *Recognizer) RecognizeSingle(imgData []byte) (face *Face, err error) {
+	faces, err := rec.recognize(0, imgData, 1)
+	if err != nil || len(faces) != 1 {
+		return
+	}
+	face = &faces[0]
+	return
+}
+
+func (rec *Recognizer) RecognizeSingleCNN(imgData []byte) (face *Face, err error) {
+	faces, err := rec.recognize(1, imgData, 1)
 	if err != nil || len(faces) != 1 {
 		return
 	}
@@ -157,13 +175,26 @@ func (rec *Recognizer) RecognizeSingle(type_ int, imgData []byte) (face *Face, e
 }
 
 // Same as Recognize but accepts image path instead.
-func (rec *Recognizer) RecognizeFile(type_ int, imgPath string) (faces []Face, err error) {
-	return rec.recognizeFile(type_, imgPath, 0)
+func (rec *Recognizer) RecognizeFile(imgPath string) (faces []Face, err error) {
+	return rec.recognizeFile(0, imgPath, 0)
+}
+
+func (rec *Recognizer) RecognizeFileCNN(imgPath string) (faces []Face, err error) {
+	return rec.recognizeFile(1, imgPath, 0)
 }
 
 // Same as RecognizeSingle but accepts image path instead.
-func (rec *Recognizer) RecognizeSingleFile(type_ int, imgPath string) (face *Face, err error) {
-	faces, err := rec.recognizeFile(type_, imgPath, 1)
+func (rec *Recognizer) RecognizeSingleFile(imgPath string) (face *Face, err error) {
+	faces, err := rec.recognizeFile(0, imgPath, 1)
+	if err != nil || len(faces) != 1 {
+		return
+	}
+	face = &faces[0]
+	return
+}
+
+func (rec *Recognizer) RecognizeSingleFileCNN(imgPath string) (face *Face, err error) {
+	faces, err := rec.recognizeFile(1, imgPath, 1)
 	if err != nil || len(faces) != 1 {
 		return
 	}
