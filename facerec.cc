@@ -45,9 +45,9 @@ using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
                             input_rgb_image_sized<150>
                             >>>>>>>>>>>>;
 
-static const size_t SHAPE_LEN = 2;
 static const size_t RECT_LEN = 4;
 static const size_t DESCR_LEN = 128;
+static const size_t SHAPE_LEN = 2;
 static const size_t RECT_SIZE = RECT_LEN * sizeof(long);
 static const size_t DESCR_SIZE = DESCR_LEN * sizeof(float);
 static const size_t SHAPE_SIZE = SHAPE_LEN * sizeof(long);
@@ -209,13 +209,13 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 	}
 	ret->num_shapes = shapes[0].num_parts();
 	ret->shapes = (long*)malloc(ret->num_faces * ret->num_shapes * SHAPE_SIZE);
-	for (int i = 0; i < 	ret->num_faces; i++) {
+	for (int i = 0; i < ret->num_faces; i++) {
 		long* dst = ret->shapes + i * ret->num_shapes * SHAPE_LEN;
-		auto shape = shapes[i];
-		for (long unsigned int j = 0;j < shape.num_parts(); j++) {
-			dst[j * SHAPE_LEN] = shape.part(j).x();
-			dst[(j * SHAPE_LEN) + 1] = shape.part(j).y();
-        }
+		const auto& shape = shapes[i];
+		for (int j = 0; j < ret->num_shapes; j++) {
+			dst[j*SHAPE_LEN] = shape.part(j).x();
+			dst[j*SHAPE_LEN+1] = shape.part(j).y();
+		}
 	}
 	return ret;
 }

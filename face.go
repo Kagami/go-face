@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	shapeLen = 2
 	rectLen  = 4
 	descrLen = 128
+	shapeLen = 2
 )
 
 // A Recognizer creates face descriptors for provided images and
@@ -90,7 +90,6 @@ func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces
 	cImgData := (*C.uint8_t)(&imgData[0])
 	cLen := C.int(len(imgData))
 	cMaxFaces := C.int(maxFaces)
-
 	cType := C.int(type_)
 
 	ret := C.facerec_recognize(rec.ptr, cImgData, cLen, cMaxFaces, cType)
@@ -102,13 +101,14 @@ func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces
 		return
 	}
 
-	// No faces.
 	numFaces := int(ret.num_faces)
 	if numFaces == 0 {
 		return
 	}
+	numShapes := int(ret.num_shapes)
 
 	// Copy faces data to Go structure.
+	defer C.free(unsafe.Pointer(ret.shapes))
 	defer C.free(unsafe.Pointer(ret.rectangles))
 	defer C.free(unsafe.Pointer(ret.descriptors))
 
@@ -120,6 +120,10 @@ func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces
 	dDataPtr := unsafe.Pointer(ret.descriptors)
 	dData := (*[1 << 30]float32)(dDataPtr)[:dDataLen:dDataLen]
 
+	sDataLen := numFaces * numShapes * shapeLen
+	sDataPtr := unsafe.Pointer(ret.shapes)
+	sData := (*[1 << 30]C.long)(sDataPtr)[:sDataLen:sDataLen]
+
 	for i := 0; i < numFaces; i++ {
 		face := Face{}
 		x0 := int(rData[i*rectLen])
@@ -128,6 +132,11 @@ func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces
 		y1 := int(rData[i*rectLen+3])
 		face.Rectangle = image.Rect(x0, y0, x1, y1)
 		copy(face.Descriptor[:], dData[i*descrLen:(i+1)*descrLen])
+		for j := 0; j < numShapes; j++ {
+			shapeX := int(sData[(i*numShapes+j)*shapeLen])
+			shapeY := int(sData[(i*numShapes+j)*shapeLen+1])
+			face.Shapes = append(face.Shapes, image.Point{shapeX, shapeY})
+		}
 		faces = append(faces, face)
 	}
 	return
