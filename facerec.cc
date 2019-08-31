@@ -73,7 +73,7 @@ public:
 
 		jittering = 0;
 		size = 150;
-		padding = 0.2;
+		padding = 0.25;
 	}
 
 	std::tuple<std::vector<rectangle>, std::vector<descriptor>, std::vector<full_object_detection>>
@@ -99,24 +99,17 @@ public:
 
 		std::sort(rects.begin(), rects.end());
 
-		std::vector<matrix<rgb_pixel>> face_imgs;
 		for (const auto& rect : rects) {
 			auto shape = sp_(img, rect);
 			shapes.push_back(shape);
 			matrix<rgb_pixel> face_chip;
 			extract_image_chip(img, get_face_chip_details(shape, size, padding), face_chip);
-			if ( jittering > 0) {
-				std::lock_guard<std::mutex> lock(net_mutex_);
-				descrs.push_back(mean(mat(net_(jitter_image(std::move(face_chip),jittering)))));
-			}
-			else
-				face_imgs.push_back(std::move(face_chip));
-		}
-
-		{
 			std::lock_guard<std::mutex> lock(net_mutex_);
-			if ( jittering <= 0)
-				descrs = net_(face_imgs);
+			if (jittering > 0) {
+				descrs.push_back(mean(mat(net_(jitter_image(std::move(face_chip), jittering)))));
+			} else {
+				descrs.push_back(net_(face_chip));
+			}
 		}
 
 		return {std::move(rects), std::move(descrs), std::move(shapes)};
