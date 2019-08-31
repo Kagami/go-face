@@ -83,7 +83,7 @@ process.
 
 ## Models
 
-Currently `shape_predictor_5_face_landmarks.dat` and
+Currently `shape_predictor_5_face_landmarks.dat`, `mmod_human_face_detector.dat` and
 `dlib_face_recognition_resnet_model_v1.dat` are required. You may download them
 from [dlib-models](https://github.com/davisking/dlib-models) repo:
 
@@ -93,6 +93,8 @@ wget https://github.com/davisking/dlib-models/raw/master/shape_predictor_5_face_
 bunzip2 shape_predictor_5_face_landmarks.dat.bz2
 wget https://github.com/davisking/dlib-models/raw/master/dlib_face_recognition_resnet_model_v1.dat.bz2
 bunzip2 dlib_face_recognition_resnet_model_v1.dat.bz2
+wget https://github.com/davisking/dlib-models/raw/master/mmod_human_face_detector.dat.bz2
+bunzip2 mmod_human_face_detector.dat.bz2
 ```
 
 ## Usage
@@ -210,9 +212,10 @@ make test
 
 There are few suggestions:
 
+* Try CNN recognizing
 * Try different tolerance values of `ClassifyThreshold`
+* Try different size/padding/jittering values of `NewRecognizerWithConfig`
 * Implement better classify heuristics (see [classify.cc](classify.cc))
-* Implement [jittering](https://github.com/davisking/dlib/blob/v19.15/examples/dnn_face_recognition_ex.cpp#L182-L190)
 * [Train](https://blog.dlib.net/2017/02/high-quality-face-recognition-with-deep.html) network (`dlib_face_recognition_resnet_model_v1.dat`) on your own test data
 
 ## License
