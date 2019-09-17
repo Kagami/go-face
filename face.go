@@ -5,6 +5,7 @@ package face
 // #cgo LDFLAGS: -ljpeg
 // #cgo LDFLAGS: -lopenblas
 // #cgo LDFLAGS: -lquadmath
+// #cgo LDFLAGS: -lgfortran
 // #include <stdlib.h>
 // #include <stdint.h>
 // #include "facerec.h"
