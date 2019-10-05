@@ -215,6 +215,7 @@ There are few suggestions:
 * Try CNN recognizing
 * Try different tolerance values of `ClassifyThreshold`
 * Try different size/padding/jittering values of `NewRecognizerWithConfig`
+* Provide more samples of each category to `SetSamples` if possible
 * Implement better classify heuristics (see [classify.cc](classify.cc))
 * [Train](https://blog.dlib.net/2017/02/high-quality-face-recognition-with-deep.html) network (`dlib_face_recognition_resnet_model_v1.dat`) on your own test data
 
