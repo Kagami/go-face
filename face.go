@@ -11,9 +11,9 @@ package face
 // #include "facerec.h"
 import "C"
 import (
+	"errors"
 	"fmt"
 	"image"
-	"io/ioutil"
 	"math"
 	"os"
 	"unsafe"
@@ -33,6 +33,7 @@ type Recognizer struct {
 
 // Face holds coordinates and descriptor of the human face.
 type Face struct {
+	imagePtr   *C.image_pointer
 	Rectangle  image.Rectangle
 	Descriptor Descriptor
 	Shapes     []image.Point
@@ -51,11 +52,11 @@ func SquaredEuclideanDistance(d1 Descriptor, d2 Descriptor) (sum float64) {
 
 // New creates new face with the provided parameters.
 func New(r image.Rectangle, d Descriptor) Face {
-	return Face{r, d, []image.Point{}}
+	return Face{Rectangle: r, Descriptor: d, Shapes: []image.Point{}}
 }
 
 func NewWithShape(r image.Rectangle, s []image.Point, d Descriptor) Face {
-	return Face{r, d, s}
+	return Face{Rectangle: r, Descriptor: d, Shapes: s}
 }
 
 // NewRecognizer returns a new recognizer interface. modelDir points to
@@ -63,16 +64,16 @@ func NewWithShape(r image.Rectangle, s []image.Point, d Descriptor) Face {
 // dlib_face_recognition_resnet_model_v1.dat files.
 func NewRecognizer(resnetPath, cnnResnetPath, shapePredictorPath string) (rec *Recognizer, err error) {
 	if !fileExists(resnetPath) {
-		fmt.Errorf("File '%s' not found!", resnetPath)
-		os.Exit(1)
+		err = errors.New(fmt.Sprintf("File '%s' not found!", resnetPath))
+		return
 	}
 	if !fileExists(cnnResnetPath) {
-		fmt.Errorf("File '%s' not found!", cnnResnetPath)
-		os.Exit(1)
+		err = errors.New(fmt.Sprintf("File '%s' not found!", cnnResnetPath))
+		return
 	}
 	if !fileExists(shapePredictorPath) {
-		fmt.Errorf("File '%s' not found!", shapePredictorPath)
-		os.Exit(1)
+		err = errors.New(fmt.Sprintf("File '%s' not found!", shapePredictorPath))
+		return
 	}
 	cResnetPath := C.CString(resnetPath)
 	defer C.free(unsafe.Pointer(cResnetPath))
@@ -94,26 +95,26 @@ func NewRecognizer(resnetPath, cnnResnetPath, shapePredictorPath string) (rec *R
 	return
 }
 
-func NewRecognizerWithConfig(resnetPath, cnnResnetPath, shapePredictorPath string, size int, padding float32, jittering int) (rec *Recognizer, err error) {
+func NewRecognizerWithConfig(resnetPath, cnnResnetPath, shapePredictorPath string, size int, padding float32, jittering int, minImageSize int) (rec *Recognizer, err error) {
 	rec, err = NewRecognizer(resnetPath, cnnResnetPath, shapePredictorPath)
 	cSize := C.ulong(size)
 	cPadding := C.double(padding)
 	cJittering := C.int(jittering)
-	C.facerec_config(rec.ptr, cSize, cPadding, cJittering)
+	cMinImageSize := C.int(minImageSize)
+	C.facerec_config(rec.ptr, cSize, cPadding, cJittering, cMinImageSize)
 	return
 }
 
-func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces []Face, err error) {
+func (rec *Recognizer) detectBuffer(type_ int, imgData []byte) (faces []Face, err error) {
 	if len(imgData) == 0 {
 		err = ImageLoadError("Empty image")
 		return
 	}
 	cImgData := (*C.uint8_t)(&imgData[0])
 	cLen := C.int(len(imgData))
-	cMaxFaces := C.int(maxFaces)
 	cType := C.int(type_)
 
-	ret := C.facerec_recognize(rec.ptr, cImgData, cLen, cMaxFaces, cType)
+	ret := C.facerec_detect_buffer(rec.ptr, cImgData, cLen, cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -126,113 +127,123 @@ func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces
 	if numFaces == 0 {
 		return
 	}
-	numShapes := int(ret.num_shapes)
 
 	// Copy faces data to Go structure.
-	defer C.free(unsafe.Pointer(ret.shapes))
 	defer C.free(unsafe.Pointer(ret.rectangles))
-	defer C.free(unsafe.Pointer(ret.descriptors))
 
 	rDataLen := numFaces * rectLen
 	rDataPtr := unsafe.Pointer(ret.rectangles)
 	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
-	dDataLen := numFaces * descrLen
-	dDataPtr := unsafe.Pointer(ret.descriptors)
-	dData := (*[1 << 30]float32)(dDataPtr)[:dDataLen:dDataLen]
-
-	sDataLen := numFaces * numShapes * shapeLen
-	sDataPtr := unsafe.Pointer(ret.shapes)
-	sData := (*[1 << 30]C.long)(sDataPtr)[:sDataLen:sDataLen]
-
 	for i := 0; i < numFaces; i++ {
-		face := Face{}
+		face := Face{imagePtr: ret.img}
 		x0 := int(rData[i*rectLen])
 		y0 := int(rData[i*rectLen+1])
 		x1 := int(rData[i*rectLen+2])
 		y1 := int(rData[i*rectLen+3])
 		face.Rectangle = image.Rect(x0, y0, x1, y1)
-		copy(face.Descriptor[:], dData[i*descrLen:(i+1)*descrLen])
-		for j := 0; j < numShapes; j++ {
-			shapeX := int(sData[(i*numShapes+j)*shapeLen])
-			shapeY := int(sData[(i*numShapes+j)*shapeLen+1])
-			face.Shapes = append(face.Shapes, image.Point{shapeX, shapeY})
-		}
 		faces = append(faces, face)
 	}
 	return
 }
 
-func (rec *Recognizer) recognizeFile(type_ int, imgPath string, maxFaces int) (face []Face, err error) {
-	fd, err := os.Open(imgPath)
-	if err != nil {
+func (rec *Recognizer) detectFile(type_ int, file string) (faces []Face, err error) {
+	if !fileExists(file) {
+		err = ImageLoadError(fmt.Sprintf("File '%s' not found!", file))
 		return
 	}
-	imgData, err := ioutil.ReadAll(fd)
-	if err != nil {
+
+	cType := C.int(type_)
+	cFile := C.CString(file)
+	defer C.free(unsafe.Pointer(cFile))
+
+	ret := C.facerec_detect_file(rec.ptr, cFile, cType)
+	defer C.free(unsafe.Pointer(ret))
+
+	if ret.err_str != nil {
+		defer C.free(unsafe.Pointer(ret.err_str))
+		err = makeError(C.GoString(ret.err_str), int(ret.err_code))
 		return
 	}
-	return rec.recognize(type_, imgData, maxFaces)
+
+	numFaces := int(ret.num_faces)
+	if numFaces == 0 {
+		return
+	}
+
+	// Copy faces data to Go structure.
+	defer C.free(unsafe.Pointer(ret.rectangles))
+
+	rDataLen := numFaces * rectLen
+	rDataPtr := unsafe.Pointer(ret.rectangles)
+	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
+
+	for i := 0; i < numFaces; i++ {
+		face := Face{imagePtr: ret.img}
+		x0 := int(rData[i*rectLen])
+		y0 := int(rData[i*rectLen+1])
+		x1 := int(rData[i*rectLen+2])
+		y1 := int(rData[i*rectLen+3])
+		face.Rectangle = image.Rect(x0, y0, x1, y1)
+		faces = append(faces, face)
+	}
+	return
 }
 
-// Recognize returns all faces found on the provided image, sorted from
+// Detect returns all faces found on the provided image, sorted from
 // left to right. Empty list is returned if there are no faces, error is
 // returned if there was some error while decoding/processing image.
 // Only JPEG format is currently supported. Thread-safe.
-func (rec *Recognizer) Recognize(imgData []byte) (faces []Face, err error) {
-	return rec.recognize(0, imgData, 0)
+func (rec *Recognizer) Detect(imgData []byte) (faces []Face, err error) {
+	return rec.detectBuffer(0, imgData)
 }
 
-func (rec *Recognizer) RecognizeCNN(imgData []byte) (faces []Face, err error) {
-	return rec.recognize(1, imgData, 0)
-}
-
-// RecognizeSingle returns face if it's the only face on the image or
-// nil otherwise. Only JPEG format is currently supported. Thread-safe.
-func (rec *Recognizer) RecognizeSingle(imgData []byte) (face *Face, err error) {
-	faces, err := rec.recognize(0, imgData, 1)
-	if err != nil || len(faces) != 1 {
-		return
-	}
-	face = &faces[0]
-	return
-}
-
-func (rec *Recognizer) RecognizeSingleCNN(imgData []byte) (face *Face, err error) {
-	faces, err := rec.recognize(1, imgData, 1)
-	if err != nil || len(faces) != 1 {
-		return
-	}
-	face = &faces[0]
-	return
+func (rec *Recognizer) DetectCNN(imgData []byte) (faces []Face, err error) {
+	return rec.detectBuffer(1, imgData)
 }
 
 // Same as Recognize but accepts image path instead.
-func (rec *Recognizer) RecognizeFile(imgPath string) (faces []Face, err error) {
-	return rec.recognizeFile(0, imgPath, 0)
+func (rec *Recognizer) DetectFromFile(imgPath string) (faces []Face, err error) {
+	return rec.detectFile(0, imgPath)
 }
 
-func (rec *Recognizer) RecognizeFileCNN(imgPath string) (faces []Face, err error) {
-	return rec.recognizeFile(1, imgPath, 0)
+func (rec *Recognizer) DetectFromFileCNN(imgPath string) (faces []Face, err error) {
+	return rec.detectFile(1, imgPath)
 }
 
-// Same as RecognizeSingle but accepts image path instead.
-func (rec *Recognizer) RecognizeSingleFile(imgPath string) (face *Face, err error) {
-	faces, err := rec.recognizeFile(0, imgPath, 1)
-	if err != nil || len(faces) != 1 {
-		return
+func (rec *Recognizer) Recognize(face *Face) error {
+	x := C.int(face.Rectangle.Min.X)
+	y := C.int(face.Rectangle.Min.Y)
+	x1 := C.int(face.Rectangle.Max.X)
+	y1 := C.int(face.Rectangle.Max.Y)
+
+	ret := C.facerec_recognize(rec.ptr, face.imagePtr, x, y, x1, y1)
+	defer C.free(unsafe.Pointer(ret))
+
+	if ret.err_str != nil {
+		defer C.free(unsafe.Pointer(ret.err_str))
+		err := makeError(C.GoString(ret.err_str), int(ret.err_code))
+		return err
 	}
-	face = &faces[0]
-	return
-}
+	numShapes := int(ret.num_shape)
+	defer C.free(unsafe.Pointer(ret.shape))
+	defer C.free(unsafe.Pointer(ret.descriptor))
 
-func (rec *Recognizer) RecognizeSingleFileCNN(imgPath string) (face *Face, err error) {
-	faces, err := rec.recognizeFile(1, imgPath, 1)
-	if err != nil || len(faces) != 1 {
-		return
+	dDataPtr := unsafe.Pointer(ret.descriptor)
+	dData := (*[1 << 30]float32)(dDataPtr)[:descrLen:descrLen]
+
+	sDataLen := numShapes * shapeLen
+	sDataPtr := unsafe.Pointer(ret.shape)
+	sData := (*[1 << 30]C.long)(sDataPtr)[:sDataLen:sDataLen]
+
+	copy(face.Descriptor[:], dData[:descrLen])
+	for j := 0; j < numShapes; j++ {
+		shapeX := int(sData[(j)*shapeLen])
+		shapeY := int(sData[(j)*shapeLen+1])
+		face.Shapes = append(face.Shapes, image.Point{shapeX, shapeY})
 	}
-	face = &faces[0]
-	return
+
+	return nil
 }
 
 // SetSamples sets known descriptors so you can classify the new ones.

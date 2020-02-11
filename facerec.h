@@ -9,47 +9,9 @@
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/graph_utils.h>
 #include "classify.h"
+#include "template.h"
 
-
-// don't kill me))
-using namespace dlib;
-
-
-template <template <int,template<typename>class,int,typename> class block, int N, template<typename>class BN, typename SUBNET>
-using residual = add_prev1<block<N,BN,1,tag1<SUBNET>>>;
-
-template <template <int,template<typename>class,int,typename> class block, int N, template<typename>class BN, typename SUBNET>
-using residual_down = add_prev2<avg_pool<2,2,2,2,skip1<tag2<block<N,BN,2,tag1<SUBNET>>>>>>;
-
-template <int N, template <typename> class BN, int stride, typename SUBNET>
-using block  = BN<con<N,3,3,1,1,relu<BN<con<N,3,3,stride,stride,SUBNET>>>>>;
-
-template <int N, typename SUBNET> using ares      = relu<residual<block,N,affine,SUBNET>>;
-template <int N, typename SUBNET> using ares_down = relu<residual_down<block,N,affine,SUBNET>>;
-
-template <typename SUBNET> using alevel0 = ares_down<256,SUBNET>;
-template <typename SUBNET> using alevel1 = ares<256,ares<256,ares_down<256,SUBNET>>>;
-template <typename SUBNET> using alevel2 = ares<128,ares<128,ares_down<128,SUBNET>>>;
-template <typename SUBNET> using alevel3 = ares<64,ares<64,ares<64,ares_down<64,SUBNET>>>>;
-template <typename SUBNET> using alevel4 = ares<32,ares<32,ares<32,SUBNET>>>;
-
-template <long num_filters, typename SUBNET> using con5d = con<num_filters,5,5,2,2,SUBNET>;
-template <long num_filters, typename SUBNET> using con5  = con<num_filters,5,5,1,1,SUBNET>;
-
-template <typename SUBNET> using downsampler  = relu<affine<con5d<32, relu<affine<con5d<32, relu<affine<con5d<16,SUBNET>>>>>>>>>;
-template <typename SUBNET> using rcon5  = relu<affine<con5<45,SUBNET>>>;
-
-using cnn_anet_type = loss_mmod<con<1,9,9,1,1,rcon5<rcon5<rcon5<downsampler<input_rgb_image_pyramid<pyramid_down<6>>>>>>>>;
-
-using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
-                            alevel0<
-                            alevel1<
-                            alevel2<
-                            alevel3<
-                            alevel4<
-                            max_pool<3,3,2,2,relu<affine<con<32,7,7,2,2,
-                            input_rgb_image_sized<150>
-                            >>>>>>>>>>>>;
+typedef matrix<rgb_pixel> image_t;
 
 class FaceRec {   
 private:
@@ -66,19 +28,25 @@ private:
 	int jittering = 0;
 	unsigned long size = 150;
 	double padding = 0.25;
+    int min_image_size;
     
 public:
-	FaceRec(const char* resnet_path,const char* cnn_resnet_path,const char* shape_predictor_path);
-	std::tuple<std::vector<rectangle>, std::vector<descriptor>, std::vector<full_object_detection>>
-	Recognize(const matrix<rgb_pixel>& img,int max_faces,int type);
-	void SetSamples(std::vector<descriptor>&& samples, std::vector<int>&& cats);
-	int Classify(const descriptor& test_sample, float tolerance);
-    void Config(unsigned long new_size, double new_padding, int new_jittering);
+	FaceRec(const char*, const char*, const char*);
+    std::vector<rectangle> Detect(image_t&);
+    std::vector<rectangle> DetectCNN(image_t&);
+    std::tuple<descriptor, full_object_detection> Recognize(const image_t&,rectangle);
+    
+	void SetSamples(std::vector<descriptor>&&, std::vector<int>&&);
+	int Classify(const descriptor&, float);
+    void Config(unsigned long, double, int, int);
 };
 
-static std::vector<matrix<rgb_pixel>> jitter_image(const matrix<rgb_pixel>& img,int count);
+static std::vector<image_t> jitter_image(const image_t& img,int count);
 
+#else
+typedef void *image_t;
 #endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,12 +67,22 @@ typedef struct facerec {
 	double padding;
 } facerec;
 
-typedef struct faceret {
+typedef struct image_pointer {
+    image_t *img;
+} image_pointer;
+
+typedef struct facesret {
+    image_pointer *img;
 	int num_faces;
 	long* rectangles;
-	float* descriptors;
-	int num_shapes;
-	long* shapes;
+	const char* err_str;
+	err_code err_code;
+} facesret;
+
+typedef struct faceret {
+	float *descriptor;
+	int num_shape;
+	long* shape;
 	const char* err_str;
 	err_code err_code;
 } faceret;
@@ -113,12 +91,16 @@ typedef struct faceret {
 #define DESCR_LEN  128
 #define SHAPE_LEN  2
 
-facerec* facerec_init(const char* resnet_path,const char* cnn_resnet_path,const char* shape_predictor_path);
-faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int max_faces,int type);
-void facerec_set_samples(facerec* rec, const float* descriptors, const int32_t* cats, int len);
-int facerec_classify(facerec* rec, const float* descriptor, float tolerance);
-void facerec_free(facerec* rec);
-void facerec_config(facerec* rec, unsigned long size, double padding, int jittering);
+facerec* facerec_init(const char*,const char*,const char*);
+facesret* facerec_detect_file(facerec*, const char*,int);
+facesret* facerec_detect_buffer(facerec*, const uint8_t*, int, int);
+facesret* facerec_detect(facesret*, facerec*, image_t, int);
+
+faceret* facerec_recognize(facerec*, image_pointer*, int, int, int, int);
+void facerec_set_samples(facerec*, const float*, const int32_t*, int);
+int facerec_classify(facerec*, const float*, float);
+void facerec_free(facerec*);
+void facerec_config(facerec*, unsigned long, double, int, int);
 
 
 
