@@ -9,75 +9,16 @@
 
 using namespace dlib;
 
-template <template <int,template<typename>class,int,typename> class block, int N, template<typename>class BN, typename SUBNET>
-using residual = add_prev1<block<N,BN,1,tag1<SUBNET>>>;
-
-template <template <int,template<typename>class,int,typename> class block, int N, template<typename>class BN, typename SUBNET>
-using residual_down = add_prev2<avg_pool<2,2,2,2,skip1<tag2<block<N,BN,2,tag1<SUBNET>>>>>>;
-
-template <int N, template <typename> class BN, int stride, typename SUBNET>
-using block  = BN<con<N,3,3,1,1,relu<BN<con<N,3,3,stride,stride,SUBNET>>>>>;
-
-template <int N, typename SUBNET> using ares      = relu<residual<block,N,affine,SUBNET>>;
-template <int N, typename SUBNET> using ares_down = relu<residual_down<block,N,affine,SUBNET>>;
-
-template <typename SUBNET> using alevel0 = ares_down<256,SUBNET>;
-template <typename SUBNET> using alevel1 = ares<256,ares<256,ares_down<256,SUBNET>>>;
-template <typename SUBNET> using alevel2 = ares<128,ares<128,ares_down<128,SUBNET>>>;
-template <typename SUBNET> using alevel3 = ares<64,ares<64,ares<64,ares_down<64,SUBNET>>>>;
-template <typename SUBNET> using alevel4 = ares<32,ares<32,ares<32,SUBNET>>>;
-
-template <long num_filters, typename SUBNET> using con5d = con<num_filters,5,5,2,2,SUBNET>;
-template <long num_filters, typename SUBNET> using con5  = con<num_filters,5,5,1,1,SUBNET>;
-
-template <typename SUBNET> using downsampler  = relu<affine<con5d<32, relu<affine<con5d<32, relu<affine<con5d<16,SUBNET>>>>>>>>>;
-template <typename SUBNET> using rcon5  = relu<affine<con5<45,SUBNET>>>;
-
-using cnn_anet_type = loss_mmod<con<1,9,9,1,1,rcon5<rcon5<rcon5<downsampler<input_rgb_image_pyramid<pyramid_down<6>>>>>>>>;
-
-using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
-                            alevel0<
-                            alevel1<
-                            alevel2<
-                            alevel3<
-                            alevel4<
-                            max_pool<3,3,2,2,relu<affine<con<32,7,7,2,2,
-                            input_rgb_image_sized<150>
-                            >>>>>>>>>>>>;
-
-static const size_t RECT_LEN = 4;
-static const size_t DESCR_LEN = 128;
-static const size_t SHAPE_LEN = 2;
-static const size_t RECT_SIZE = RECT_LEN * sizeof(long);
-static const size_t DESCR_SIZE = DESCR_LEN * sizeof(float);
-static const size_t SHAPE_SIZE = SHAPE_LEN * sizeof(long);
-
-static std::vector<matrix<rgb_pixel>> jitter_image(
-    const matrix<rgb_pixel>& img,
-    int count
-);
-
-class FaceRec {
-public:
-	FaceRec(const char* model_dir) {
+FaceRec::FaceRec(const char* resnet_path,const char* cnn_resnet_path,const char* shape_predictor_path) {
 		detector_ = get_frontal_face_detector();
 
-		std::string dir = model_dir;
-		std::string shape_predictor_path = dir + "/shape_predictor_5_face_landmarks.dat";
-		std::string resnet_path = dir + "/dlib_face_recognition_resnet_model_v1.dat";
-		std::string cnn_resnet_path = dir + "/mmod_human_face_detector.dat";
-
-		deserialize(shape_predictor_path) >> sp_;
-		deserialize(resnet_path) >> net_;
-		deserialize(cnn_resnet_path) >> cnn_net_;
-
-		jittering = 0;
-		size = 150;
-		padding = 0.25;
+		deserialize(std::string(shape_predictor_path)) >> sp_;
+		deserialize(std::string(resnet_path)) >> net_;
+		deserialize(std::string(cnn_resnet_path)) >> cnn_net_;
 	}
 
-	std::tuple<std::vector<rectangle>, std::vector<descriptor>, std::vector<full_object_detection>>
-	Recognize(const matrix<rgb_pixel>& img,int max_faces,int type) {
+std::tuple<std::vector<rectangle>, std::vector<descriptor>, std::vector<full_object_detection>>
+	FaceRec::Recognize(const matrix<rgb_pixel>& img,int max_faces,int type) {
 		std::vector<rectangle> rects;
 		std::vector<descriptor> descrs;
 		std::vector<full_object_detection> shapes;
@@ -115,44 +56,29 @@ public:
 		return {std::move(rects), std::move(descrs), std::move(shapes)};
 	}
 
-	void SetSamples(std::vector<descriptor>&& samples, std::vector<int>&& cats) {
+	void FaceRec::SetSamples(std::vector<descriptor>&& samples, std::vector<int>&& cats) {
 		std::unique_lock<std::shared_mutex> lock(samples_mutex_);
 		samples_ = std::move(samples);
 		cats_ = std::move(cats);
 	}
 
-	int Classify(const descriptor& test_sample, float tolerance) {
+	int FaceRec::Classify(const descriptor& test_sample, float tolerance) {
 		std::shared_lock<std::shared_mutex> lock(samples_mutex_);
 		return classify(samples_, cats_, test_sample, tolerance);
 	}
 
-    void Config(unsigned long new_size, double new_padding, int new_jittering) {
+    void FaceRec::Config(unsigned long new_size, double new_padding, int new_jittering) {
         size = new_size;
         padding = new_padding;
         jittering = new_jittering;
     }
-private:
-	std::mutex detector_mutex_;
-	std::mutex net_mutex_;
-	std::mutex cnn_net_mutex_;
-	std::shared_mutex samples_mutex_;
-	frontal_face_detector detector_;
-	shape_predictor sp_;
-	anet_type net_;
-	cnn_anet_type cnn_net_;
-	std::vector<descriptor> samples_;
-	std::vector<int> cats_;
-	int jittering;
-	unsigned long size;
-	double padding;
-};
-
+    
 // Plain C interface for Go.
 
-facerec* facerec_init(const char* model_dir) {
+facerec* facerec_init(const char* resnet_path,const char* cnn_resnet_path,const char* shape_predictor_path) {
 	facerec* rec = (facerec*)calloc(1, sizeof(facerec));
 	try {
-		FaceRec* cls = new FaceRec(model_dir);
+		FaceRec* cls = new FaceRec(resnet_path,cnn_resnet_path,shape_predictor_path);
 		rec->cls = (void*)cls;
 	} catch(serialization_error& e) {
 		rec->err_str = strdup(e.what());
@@ -193,7 +119,7 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 
 	if (ret->num_faces == 0)
 		return ret;
-	ret->rectangles = (long*)malloc(ret->num_faces * RECT_SIZE);
+	ret->rectangles = (long*)malloc(ret->num_faces * RECT_LEN * sizeof(long));
 	for (int i = 0; i < ret->num_faces; i++) {
 		long* dst = ret->rectangles + i * RECT_LEN;
 		dst[0] = rects[i].left();
@@ -201,14 +127,14 @@ faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int m
 		dst[2] = rects[i].right();
 		dst[3] = rects[i].bottom();
 	}
-	ret->descriptors = (float*)malloc(ret->num_faces * DESCR_SIZE);
+	ret->descriptors = (float*)malloc(ret->num_faces * DESCR_LEN * sizeof(float));
 	for (int i = 0; i < ret->num_faces; i++) {
-		void* dst = (uint8_t*)(ret->descriptors) + i * DESCR_SIZE;
+		void* dst = (uint8_t*)(ret->descriptors) + i * DESCR_LEN * sizeof(float);
 		void* src = (void*)&descrs[i](0,0);
-		memcpy(dst, src, DESCR_SIZE);
+		memcpy(dst, src, DESCR_LEN * sizeof(float));
 	}
 	ret->num_shapes = shapes[0].num_parts();
-	ret->shapes = (long*)malloc(ret->num_faces * ret->num_shapes * SHAPE_SIZE);
+	ret->shapes = (long*)malloc(ret->num_faces * ret->num_shapes * SHAPE_LEN * sizeof(long));
 	for (int i = 0; i < ret->num_faces; i++) {
 		long* dst = ret->shapes + i * ret->num_shapes * SHAPE_LEN;
 		const auto& shape = shapes[i];

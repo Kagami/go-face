@@ -11,6 +11,7 @@ package face
 // #include "facerec.h"
 import "C"
 import (
+	"fmt"
 	"image"
 	"io/ioutil"
 	"math"
@@ -60,10 +61,27 @@ func NewWithShape(r image.Rectangle, s []image.Point, d Descriptor) Face {
 // NewRecognizer returns a new recognizer interface. modelDir points to
 // directory with shape_predictor_5_face_landmarks.dat and
 // dlib_face_recognition_resnet_model_v1.dat files.
-func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
-	cModelDir := C.CString(modelDir)
-	defer C.free(unsafe.Pointer(cModelDir))
-	ptr := C.facerec_init(cModelDir)
+func NewRecognizer(resnetPath, cnnResnetPath, shapePredictorPath string) (rec *Recognizer, err error) {
+	if !fileExists(resnetPath) {
+		fmt.Errorf("File '%s' not found!", resnetPath)
+		os.Exit(1)
+	}
+	if !fileExists(cnnResnetPath) {
+		fmt.Errorf("File '%s' not found!", cnnResnetPath)
+		os.Exit(1)
+	}
+	if !fileExists(shapePredictorPath) {
+		fmt.Errorf("File '%s' not found!", shapePredictorPath)
+		os.Exit(1)
+	}
+	cResnetPath := C.CString(resnetPath)
+	defer C.free(unsafe.Pointer(cResnetPath))
+	cCnnResnetPath := C.CString(cnnResnetPath)
+	defer C.free(unsafe.Pointer(cCnnResnetPath))
+	cShapePredictorPath := C.CString(shapePredictorPath)
+	defer C.free(unsafe.Pointer(cShapePredictorPath))
+
+	ptr := C.facerec_init(cResnetPath, cCnnResnetPath, cShapePredictorPath)
 
 	if ptr.err_str != nil {
 		defer C.facerec_free(ptr)
@@ -76,8 +94,8 @@ func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
 	return
 }
 
-func NewRecognizerWithConfig(modelDir string, size int, padding float32, jittering int) (rec *Recognizer, err error) {
-	rec, err = NewRecognizer(modelDir)
+func NewRecognizerWithConfig(resnetPath, cnnResnetPath, shapePredictorPath string, size int, padding float32, jittering int) (rec *Recognizer, err error) {
+	rec, err = NewRecognizer(resnetPath, cnnResnetPath, shapePredictorPath)
 	cSize := C.ulong(size)
 	cPadding := C.double(padding)
 	cJittering := C.int(jittering)
@@ -249,4 +267,12 @@ func (rec *Recognizer) ClassifyThreshold(testSample Descriptor, tolerance float3
 func (rec *Recognizer) Close() {
 	C.facerec_free(rec.ptr)
 	rec.ptr = nil
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
