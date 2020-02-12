@@ -209,8 +209,8 @@ func (rec *Recognizer) detectFromFile(type_ int, file string) (faces []Face, err
 	cType := C.int(type_)
 	cFile := C.CString(file)
 	defer C.free(unsafe.Pointer(cFile))
-	var ptr *C.image_pointer
-	ret := C.facerec_detect_from_file(rec.ptr, ptr, cFile, cType)
+	var ptr C.image_pointer
+	ret := C.facerec_detect_from_file(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), cFile, cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
