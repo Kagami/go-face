@@ -1,11 +1,14 @@
 #include <shared_mutex>
 #include <dlib/dnn.h>
 #include <dlib/image_loader/image_loader.h>
+#include <dlib/image_loader/jpeg_loader.h>
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/graph_utils.h>
 #include <dlib/image_io.h>
+#include <dlib/opencv.h> 
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/types_c.h>
 #include "facerec.h"
-#include "jpeg_mem_loader.h"
 #include "classify.h"
 
 using namespace dlib;
@@ -45,7 +48,7 @@ std::vector<rectangle> FaceRec::DetectCNN(image_t& img) {
     return rects; 
 }
 
-std::tuple<descriptor, full_object_detection> FaceRec::Recognize(const image_t& img,rectangle rect) {
+std::tuple<descriptor, full_object_detection> FaceRec::Recognize(image_t& img,rectangle rect) {
     full_object_detection shape;
     descriptor descr;
     image_t face_chip;
@@ -104,7 +107,7 @@ void facerec_config(facerec* rec, unsigned long size, double padding, int jitter
 	cls->Config(size,padding, jittering, min_image_size);
 }
 
-facesret* facerec_detect_file(facerec* rec, const char* file,int type) {
+facesret* facerec_detect_file(facerec* rec, image_pointer *p, const char* file,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
 	std::vector<rectangle> rects;
@@ -123,17 +126,19 @@ facesret* facerec_detect_file(facerec* rec, const char* file,int type) {
 		return ret;
 	}
     
-    return facerec_detect(ret, rec, img, type);
+    return facerec_detect(ret, p, rec, img, type);
 }
 
-facesret* facerec_detect_buffer(facerec* rec, const uint8_t* img_data, int len,int type) {
+facesret* facerec_detect_mat(facerec* rec, image_pointer *p, const void *mat,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
 	std::vector<rectangle> rects;
-
+    cv::Mat *mat_img = new cv::Mat(*((cv::Mat*)mat));
+    IplImage ipl_img = cvIplImage(*mat_img);
+    
 	try {
-		// TODO(Kagami): Support more file types?
-		load_mem_jpeg(img, img_data, len);
+		cv_image<bgr_pixel> dlib_img(&ipl_img);
+        assign_image(img, dlib_img);
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;
@@ -144,25 +149,46 @@ facesret* facerec_detect_buffer(facerec* rec, const uint8_t* img_data, int len,i
 		return ret;
 	}
     
-    return facerec_detect(ret, rec, img, type);
+    return facerec_detect(ret, p, rec, img, type);
 }
 
-facesret* facerec_detect(facesret* ret, facerec* rec, image_t img, int type) {
+facesret* facerec_detect_buffer(facerec* rec, image_pointer *p, unsigned char* img_data, int len,int type) {
+	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
+	image_t img;
+	std::vector<rectangle> rects;
+
+	try {
+		// TODO(Kagami): Support more file types?
+		load_jpeg(img, img_data, size_t(len));
+	} catch(image_load_error& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = IMAGE_LOAD_ERROR;
+		return ret;
+	} catch (std::exception& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = UNKNOWN_ERROR;
+		return ret;
+	}
+    
+    return facerec_detect(ret, p, rec, img, type);
+}
+
+facesret* facerec_detect(facesret* ret, image_pointer *p, facerec* rec, image_t &img, int type) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	std::vector<rectangle> rects;
-    
+
     if (type == 0 ) {
         rects = cls->Detect(img);
     } else {
         rects = cls->DetectCNN(img);
     }
-    
+
     ret->num_faces = rects.size();
-    ret->img = new image_pointer{&img};
-	
+    p->p = new image_t(img);
+
     if (ret->num_faces == 0)
 		return ret;
-        
+
 	ret->rectangles = (long*)malloc(ret->num_faces * RECT_LEN * sizeof(long));
 	for (int i = 0; i < ret->num_faces; i++) {
 		long* dst = ret->rectangles + i * RECT_LEN;
@@ -174,14 +200,17 @@ facesret* facerec_detect(facesret* ret, facerec* rec, image_t img, int type) {
 	return ret;
 }
 
-faceret* facerec_recognize(facerec* rec, image_pointer *pointer, int x, int y, int x1, int y1) {
-    	faceret* ret = (faceret*)calloc(1, sizeof(faceret));
+faceret* facerec_recognize(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
+    faceret* ret = (faceret*)calloc(1, sizeof(faceret));
 	FaceRec* cls = (FaceRec*)(rec->cls);
+    image_t img = *((image_t*)p->p);
+
 	descriptor descr;
 	full_object_detection shape;
-    
-	try {
-		std::tie(descr, shape) = cls->Recognize(*(pointer->img), rectangle(x,y,x1,y1));
+	rectangle r = rectangle(x,y,x1,y1);
+
+   try {
+		std::tie(descr, shape) = cls->Recognize(img, r);
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;
@@ -191,7 +220,6 @@ faceret* facerec_recognize(facerec* rec, image_pointer *pointer, int x, int y, i
 		ret->err_code = UNKNOWN_ERROR;
 		return ret;
 	}
-
 	ret->descriptor = (float*)malloc(DESCR_LEN * sizeof(float));
 	memcpy((uint8_t*)(ret->descriptor), (void*)&descr(0,0), DESCR_LEN * sizeof(float));
 	
@@ -203,7 +231,7 @@ faceret* facerec_recognize(facerec* rec, image_pointer *pointer, int x, int y, i
 		dst[j*SHAPE_LEN] = shape.part(j).x();
 		dst[j*SHAPE_LEN+1] = shape.part(j).y();
     }
-	
+    
 	return ret;
 }
 

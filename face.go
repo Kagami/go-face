@@ -1,5 +1,9 @@
 package face
 
+// #cgo !windows pkg-config: opencv4
+// #cgo CXXFLAGS:   --std=c++11
+// #cgo windows  CPPFLAGS:   -IC:/opencv/build/install/include
+// #cgo windows  LDFLAGS:    -LC:/opencv/build/install/x64/mingw/lib -lopencv_core420 -lopencv_face420 -lopencv_videoio420 -lopencv_imgproc420 -lopencv_highgui420 -lopencv_imgcodecs420 -lopencv_objdetect420 -lopencv_features2d420 -lopencv_video420 -lopencv_dnn420 -lopencv_xfeatures2d420 -lopencv_plot420 -lopencv_tracking420 -lopencv_img_hash420 -lopencv_calib3d420
 // #cgo pkg-config: dlib-1
 // #cgo CXXFLAGS: -std=c++1z -Wall -O3 -DNDEBUG -march=native
 // #cgo LDFLAGS: -ljpeg
@@ -17,6 +21,8 @@ import (
 	"math"
 	"os"
 	"unsafe"
+
+	"gocv.io/x/gocv"
 )
 
 const (
@@ -33,10 +39,10 @@ type Recognizer struct {
 
 // Face holds coordinates and descriptor of the human face.
 type Face struct {
-	imagePtr   *C.image_pointer
-	Rectangle  image.Rectangle
-	Descriptor Descriptor
-	Shapes     []image.Point
+	imagePointer *C.image_pointer
+	Rectangle    image.Rectangle
+	Descriptor   Descriptor
+	Shapes       []image.Point
 }
 
 // Descriptor holds 128-dimensional feature vector.
@@ -110,11 +116,12 @@ func (rec *Recognizer) detectBuffer(type_ int, imgData []byte) (faces []Face, er
 		err = ImageLoadError("Empty image")
 		return
 	}
-	cImgData := (*C.uint8_t)(&imgData[0])
+	cImgData := (*C.uchar)(&imgData[0])
 	cLen := C.int(len(imgData))
 	cType := C.int(type_)
+	var ptr C.image_pointer
 
-	ret := C.facerec_detect_buffer(rec.ptr, cImgData, cLen, cType)
+	ret := C.facerec_detect_buffer(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), cImgData, cLen, cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -136,7 +143,45 @@ func (rec *Recognizer) detectBuffer(type_ int, imgData []byte) (faces []Face, er
 	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	for i := 0; i < numFaces; i++ {
-		face := Face{imagePtr: ret.img}
+		fmt.Println("pointer", &ptr)
+		face := Face{imagePointer: &ptr}
+		x0 := int(rData[i*rectLen])
+		y0 := int(rData[i*rectLen+1])
+		x1 := int(rData[i*rectLen+2])
+		y1 := int(rData[i*rectLen+3])
+		face.Rectangle = image.Rect(x0, y0, x1, y1)
+		faces = append(faces, face)
+	}
+	return
+}
+
+func (rec *Recognizer) detectMat(type_ int, mat gocv.Mat) (faces []Face, err error) {
+	cType := C.int(type_)
+	var ptr C.image_pointer
+
+	ret := C.facerec_detect_mat(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), unsafe.Pointer(mat.Ptr()), cType)
+	defer C.free(unsafe.Pointer(ret))
+
+	if ret.err_str != nil {
+		defer C.free(unsafe.Pointer(ret.err_str))
+		err = makeError(C.GoString(ret.err_str), int(ret.err_code))
+		return
+	}
+
+	numFaces := int(ret.num_faces)
+	if numFaces == 0 {
+		return
+	}
+
+	// Copy faces data to Go structure.
+	defer C.free(unsafe.Pointer(ret.rectangles))
+
+	rDataLen := numFaces * rectLen
+	rDataPtr := unsafe.Pointer(ret.rectangles)
+	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
+
+	for i := 0; i < numFaces; i++ {
+		face := Face{imagePointer: &ptr}
 		x0 := int(rData[i*rectLen])
 		y0 := int(rData[i*rectLen+1])
 		x1 := int(rData[i*rectLen+2])
@@ -156,8 +201,8 @@ func (rec *Recognizer) detectFile(type_ int, file string) (faces []Face, err err
 	cType := C.int(type_)
 	cFile := C.CString(file)
 	defer C.free(unsafe.Pointer(cFile))
-
-	ret := C.facerec_detect_file(rec.ptr, cFile, cType)
+	var ptr *C.image_pointer
+	ret := C.facerec_detect_file(rec.ptr, ptr, cFile, cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -179,7 +224,7 @@ func (rec *Recognizer) detectFile(type_ int, file string) (faces []Face, err err
 	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	for i := 0; i < numFaces; i++ {
-		face := Face{imagePtr: ret.img}
+		face := Face{imagePointer: ptr}
 		x0 := int(rData[i*rectLen])
 		y0 := int(rData[i*rectLen+1])
 		x1 := int(rData[i*rectLen+2])
@@ -188,6 +233,14 @@ func (rec *Recognizer) detectFile(type_ int, file string) (faces []Face, err err
 		faces = append(faces, face)
 	}
 	return
+}
+
+func (rec *Recognizer) DetectMat(mat gocv.Mat) (faces []Face, err error) {
+	return rec.detectMat(0, mat)
+}
+
+func (rec *Recognizer) DetectMatCNN(mat gocv.Mat) (faces []Face, err error) {
+	return rec.detectMat(1, mat)
 }
 
 // Detect returns all faces found on the provided image, sorted from
@@ -217,7 +270,7 @@ func (rec *Recognizer) Recognize(face *Face) error {
 	x1 := C.int(face.Rectangle.Max.X)
 	y1 := C.int(face.Rectangle.Max.Y)
 
-	ret := C.facerec_recognize(rec.ptr, face.imagePtr, x, y, x1, y1)
+	ret := C.facerec_recognize(rec.ptr, (*C.image_pointer)(unsafe.Pointer(face.imagePointer)), x, y, x1, y1)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -286,4 +339,8 @@ func fileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func (f *Face) Close() {
+	f.imagePointer = nil
 }
