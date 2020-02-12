@@ -53,6 +53,7 @@ void facerec_set_samples(facerec*, const float*, const int32_t*, int);
 int facerec_classify(facerec*, const float*, float);
 void facerec_free(facerec*);
 void facerec_config(facerec*, unsigned long, double, int, int);
+void image_pointer_free(image_pointer* p);
 
 enum type
     {

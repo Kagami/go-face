@@ -342,5 +342,6 @@ func fileExists(filename string) bool {
 }
 
 func (f *Face) Close() {
+	C.image_pointer_free(f.imagePointer)
 	f.imagePointer = nil
 }

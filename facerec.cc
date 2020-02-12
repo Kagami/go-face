@@ -269,6 +269,16 @@ void facerec_free(facerec* rec) {
 	}
 }
 
+void image_pointer_free(image_pointer* p) {
+	if (p) {
+		if (p->p) {
+			image_t *img = ((image_t*)p->p);
+			delete img;
+			p->p = NULL;
+		}
+	}
+}
+
 static std::vector<image_t> jitter_image(
     const image_t& img,
     int count
