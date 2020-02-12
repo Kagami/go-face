@@ -36,6 +36,7 @@ build:
 sudo_install:
 	cd $(TMP_DIR)dlib-${BRANCH}/build
 	sudo make install
+	sudo ldconfig
 
 clean:
 	rm -rf $(TMP_DIR)dlib-${BRANCH}
