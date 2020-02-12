@@ -45,11 +45,13 @@ typedef struct faceret {
 #define SHAPE_LEN  2
 
 facerec* facerec_init();
-facesret* facerec_detect_file(facerec*,  image_pointer *, const char*,int);
-facesret* facerec_detect_buffer(facerec*,  image_pointer *, unsigned char*, int, int);
+facesret* facerec_detect_from_file(facerec*,  image_pointer *, const char*,int);
+facesret* facerec_detect_from_buffer(facerec*,  image_pointer *, unsigned char*, int, int);
 faceret* facerec_recognize(facerec*, image_pointer*, int, int, int, int);
-int facerec_gender(facerec* rec, image_pointer *, int, int, int, int);
-int facerec_age(facerec* rec, image_pointer *, int, int, int, int);
+
+int facerec_get_gender(facerec* rec, image_pointer *, int, int, int, int);
+int facerec_get_age(facerec* rec, image_pointer *, int, int, int, int);
+
 void facerec_set_cnn(facerec* , const char *);
 void facerec_set_shape(facerec* , const char *);
 void facerec_set_descriptor(facerec* , const char *);
@@ -59,10 +61,12 @@ void facerec_set_age(facerec* , const char *);
 void facerec_set_samples(facerec*, const float*, const int32_t*, int);
 int facerec_classify(facerec*, const float*, float);
 void facerec_free(facerec*);
-void facerec_config_size(facerec* rec, unsigned long size);
-void facerec_config_padding(facerec* rec, double padding);
-void facerec_config_jittering(facerec* rec, int jittering);
-void facerec_config_min_image_size(facerec* rec, int min_image_size);
+
+void facerec_config_set_size(facerec* rec, unsigned long size);
+void facerec_config_set_padding(facerec* rec, double padding);
+void facerec_config_set_jittering(facerec* rec, int jittering);
+void facerec_config_set_min_image_size(facerec* rec, int min_image_size);
+
 void image_pointer_free(image_pointer* p);
 
 #ifdef __cplusplus

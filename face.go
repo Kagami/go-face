@@ -86,7 +86,7 @@ func NewRecognizer() (rec *Recognizer, err error) {
 	return
 }
 
-func (rec *Recognizer) SetShape(shapePredictorPath string) (err error) {
+func (rec *Recognizer) SetShapeModel(shapePredictorPath string) (err error) {
 	if !fileExists(shapePredictorPath) {
 		err = errors.New(fmt.Sprintf("File '%s' not found!", shapePredictorPath))
 		return
@@ -97,7 +97,7 @@ func (rec *Recognizer) SetShape(shapePredictorPath string) (err error) {
 	return
 }
 
-func (rec *Recognizer) SetDescriptor(resnetPath string) (err error) {
+func (rec *Recognizer) SetDescriptorModel(resnetPath string) (err error) {
 	if !fileExists(resnetPath) {
 		err = errors.New(fmt.Sprintf("File '%s' not found!", resnetPath))
 		return
@@ -108,7 +108,7 @@ func (rec *Recognizer) SetDescriptor(resnetPath string) (err error) {
 	return
 }
 
-func (rec *Recognizer) SetCNN(cnnResnetPath string) (err error) {
+func (rec *Recognizer) SetCNNModel(cnnResnetPath string) (err error) {
 	if !fileExists(cnnResnetPath) {
 		err = errors.New(fmt.Sprintf("File '%s' not found!", cnnResnetPath))
 		return
@@ -119,7 +119,7 @@ func (rec *Recognizer) SetCNN(cnnResnetPath string) (err error) {
 	return
 }
 
-func (rec *Recognizer) SetGender(genderPath string) (err error) {
+func (rec *Recognizer) SetGenderModel(genderPath string) (err error) {
 	if !fileExists(genderPath) {
 		err = errors.New(fmt.Sprintf("File '%s' not found!", genderPath))
 		return
@@ -130,7 +130,7 @@ func (rec *Recognizer) SetGender(genderPath string) (err error) {
 	return
 }
 
-func (rec *Recognizer) SetAge(agePath string) (err error) {
+func (rec *Recognizer) SetAgeModel(agePath string) (err error) {
 	if !fileExists(agePath) {
 		err = errors.New(fmt.Sprintf("File '%s' not found!", agePath))
 		return
@@ -142,22 +142,22 @@ func (rec *Recognizer) SetAge(agePath string) (err error) {
 }
 
 func (rec *Recognizer) SetSize(size int) {
-	C.facerec_config_size(rec.ptr, C.ulong(size))
+	C.facerec_config_set_size(rec.ptr, C.ulong(size))
 }
 
 func (rec *Recognizer) SetPadding(padding float32) {
-	C.facerec_config_padding(rec.ptr, C.double(padding))
+	C.facerec_config_set_padding(rec.ptr, C.double(padding))
 }
 
 func (rec *Recognizer) SetJittering(jittering int) {
-	C.facerec_config_jittering(rec.ptr, C.int(jittering))
+	C.facerec_config_set_jittering(rec.ptr, C.int(jittering))
 }
 
 func (rec *Recognizer) SetMinImageSize(minImageSize int) {
-	C.facerec_config_min_image_size(rec.ptr, C.int(minImageSize))
+	C.facerec_config_set_min_image_size(rec.ptr, C.int(minImageSize))
 }
 
-func (rec *Recognizer) detectBuffer(type_ int, imgData []byte) (faces []Face, err error) {
+func (rec *Recognizer) detectFromBuffer(type_ int, imgData []byte) (faces []Face, err error) {
 	if len(imgData) == 0 {
 		err = ImageLoadError("Empty image")
 		return
@@ -167,7 +167,7 @@ func (rec *Recognizer) detectBuffer(type_ int, imgData []byte) (faces []Face, er
 	cType := C.int(type_)
 	var ptr C.image_pointer
 
-	ret := C.facerec_detect_buffer(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), cImgData, cLen, cType)
+	ret := C.facerec_detect_from_buffer(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), cImgData, cLen, cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -200,7 +200,7 @@ func (rec *Recognizer) detectBuffer(type_ int, imgData []byte) (faces []Face, er
 	return
 }
 
-func (rec *Recognizer) detectFile(type_ int, file string) (faces []Face, err error) {
+func (rec *Recognizer) detectFromFile(type_ int, file string) (faces []Face, err error) {
 	if !fileExists(file) {
 		err = ImageLoadError(fmt.Sprintf("File '%s' not found!", file))
 		return
@@ -210,7 +210,7 @@ func (rec *Recognizer) detectFile(type_ int, file string) (faces []Face, err err
 	cFile := C.CString(file)
 	defer C.free(unsafe.Pointer(cFile))
 	var ptr *C.image_pointer
-	ret := C.facerec_detect_file(rec.ptr, ptr, cFile, cType)
+	ret := C.facerec_detect_from_file(rec.ptr, ptr, cFile, cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -247,21 +247,21 @@ func (rec *Recognizer) detectFile(type_ int, file string) (faces []Face, err err
 // left to right. Empty list is returned if there are no faces, error is
 // returned if there was some error while decoding/processing image.
 // Only JPEG format is currently supported. Thread-safe.
-func (rec *Recognizer) Detect(imgData []byte) (faces []Face, err error) {
-	return rec.detectBuffer(0, imgData)
+func (rec *Recognizer) DetectFromBuffer(imgData []byte) (faces []Face, err error) {
+	return rec.detectFromBuffer(0, imgData)
 }
 
-func (rec *Recognizer) DetectCNN(imgData []byte) (faces []Face, err error) {
-	return rec.detectBuffer(1, imgData)
+func (rec *Recognizer) DetectFromBufferCNN(imgData []byte) (faces []Face, err error) {
+	return rec.detectFromBuffer(1, imgData)
 }
 
 // Same as Recognize but accepts image path instead.
 func (rec *Recognizer) DetectFromFile(imgPath string) (faces []Face, err error) {
-	return rec.detectFile(0, imgPath)
+	return rec.detectFromFile(0, imgPath)
 }
 
 func (rec *Recognizer) DetectFromFileCNN(imgPath string) (faces []Face, err error) {
-	return rec.detectFile(1, imgPath)
+	return rec.detectFromFile(1, imgPath)
 }
 
 func (rec *Recognizer) GetGender(face *Face) {
@@ -270,7 +270,7 @@ func (rec *Recognizer) GetGender(face *Face) {
 	x1 := C.int(face.Rectangle.Max.X)
 	y1 := C.int(face.Rectangle.Max.Y)
 
-	face.Gender = Gender(int(C.facerec_gender(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1)))
+	face.Gender = Gender(int(C.facerec_get_gender(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1)))
 }
 
 func (rec *Recognizer) GetAge(face *Face) {
@@ -279,7 +279,7 @@ func (rec *Recognizer) GetAge(face *Face) {
 	x1 := C.int(face.Rectangle.Max.X)
 	y1 := C.int(face.Rectangle.Max.Y)
 
-	face.Age = int(C.facerec_age(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1))
+	face.Age = int(C.facerec_get_age(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1))
 }
 
 func (rec *Recognizer) Recognize(face *Face) error {

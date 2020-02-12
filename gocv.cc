@@ -8,7 +8,7 @@
 
 using namespace dlib;
 
-facesret* facerec_detect_mat(facerec* rec, image_pointer *p, const void *mat,int type) {
+facesret* facerec_detect_from_mat(facerec* rec, image_pointer *p, const void *mat,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
 	std::vector<rectangle> rects;

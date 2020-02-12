@@ -18,11 +18,11 @@ import (
 	"gocv.io/x/gocv"
 )
 
-func (rec *Recognizer) detectMat(type_ int, mat gocv.Mat) (faces []Face, err error) {
+func (rec *Recognizer) detectFromMat(type_ int, mat gocv.Mat) (faces []Face, err error) {
 	cType := C.int(type_)
 	var ptr C.image_pointer
 
-	ret := C.facerec_detect_mat(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), unsafe.Pointer(mat.Ptr()), cType)
+	ret := C.facerec_detect_from_mat(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), unsafe.Pointer(mat.Ptr()), cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -55,10 +55,10 @@ func (rec *Recognizer) detectMat(type_ int, mat gocv.Mat) (faces []Face, err err
 	return
 }
 
-func (rec *Recognizer) DetectMat(mat gocv.Mat) (faces []Face, err error) {
-	return rec.detectMat(0, mat)
+func (rec *Recognizer) DetectFromMat(mat gocv.Mat) (faces []Face, err error) {
+	return rec.detectFromMat(0, mat)
 }
 
-func (rec *Recognizer) DetectMatCNN(mat gocv.Mat) (faces []Face, err error) {
-	return rec.detectMat(1, mat)
+func (rec *Recognizer) DetectFromMatCNN(mat gocv.Mat) (faces []Face, err error) {
+	return rec.detectFromMat(1, mat)
 }

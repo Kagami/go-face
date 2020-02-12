@@ -26,22 +26,22 @@ facerec* facerec_init() {
 	return rec;
 }
 
-void facerec_config_size(facerec* rec, unsigned long size) {
+void facerec_config_set_size(facerec* rec, unsigned long size) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	cls->setSize(size);
 }
 
-void facerec_config_padding(facerec* rec, double padding) {
+void facerec_config_set_padding(facerec* rec, double padding) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	cls->setPadding(padding);
 }
 
-void facerec_config_jittering(facerec* rec, int jittering) {
+void facerec_config_set_jittering(facerec* rec, int jittering) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	cls->setJittering(jittering);
 }
 
-void facerec_config_min_image_size(facerec* rec, int min_image_size) {
+void facerec_config_set_min_image_size(facerec* rec, int min_image_size) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	cls->setMinImageSize(min_image_size);
 }
@@ -71,7 +71,7 @@ void facerec_set_age(facerec* rec, const char *file) {
 	cls->setAge(file);
 }
 
-facesret* facerec_detect_file(facerec* rec, image_pointer *p, const char* file,int type) {
+facesret* facerec_detect_from_file(facerec* rec, image_pointer *p, const char* file,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
 	std::vector<rectangle> rects;
@@ -93,7 +93,7 @@ facesret* facerec_detect_file(facerec* rec, image_pointer *p, const char* file,i
     return facerec_detect(ret, p, rec, img, type);
 }
 
-facesret* facerec_detect_buffer(facerec* rec, image_pointer *p, unsigned char* img_data, int len,int type) {
+facesret* facerec_detect_from_buffer(facerec* rec, image_pointer *p, unsigned char* img_data, int len,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
 	std::vector<rectangle> rects;
@@ -149,7 +149,7 @@ faceret* facerec_recognize(facerec* rec, image_pointer *p, int x, int y, int x1,
 	return ret;
 }
 
-int facerec_gender(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
+int facerec_get_gender(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
     image_t img = *((image_t*)p->p);
 	rectangle r = rectangle(x,y,x1,y1);
@@ -157,7 +157,7 @@ int facerec_gender(facerec* rec, image_pointer *p, int x, int y, int x1, int y1)
 	return cls->gender(img, r);
 }
 
-int facerec_age(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
+int facerec_get_age(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
     image_t img = *((image_t*)p->p);
 	rectangle r = rectangle(x,y,x1,y1);
