@@ -4,7 +4,7 @@ package face
 // #cgo CXXFLAGS: -std=c++1z -Wall -O3 -DNDEBUG -march=native
 // #cgo LDFLAGS: -ljpeg
 // #cgo LDFLAGS: -lopenblas
-// #cgo LDFLAGS: -lquadmath
+// #cgo LDFLAGS: -llapack
 // #include <stdlib.h>
 // #include <stdint.h>
 // #include "wrapper.h"
