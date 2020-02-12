@@ -48,13 +48,13 @@ facerec* facerec_init();
 facesret* facerec_detect_file(facerec*,  image_pointer *, const char*,int);
 facesret* facerec_detect_buffer(facerec*,  image_pointer *, unsigned char*, int, int);
 faceret* facerec_recognize(facerec*, image_pointer*, int, int, int, int);
-int facerec_gender(facerec* rec, image_pointer *p, int x, int y, int x1, int y1);
+int facerec_gender(facerec* rec, image_pointer *, int, int, int, int);
+int facerec_age(facerec* rec, image_pointer *, int, int, int, int);
 void facerec_set_cnn(facerec* , const char *);
 void facerec_set_shape(facerec* , const char *);
 void facerec_set_descriptor(facerec* , const char *);
 void facerec_set_gender(facerec* , const char *);
-
-
+void facerec_set_age(facerec* , const char *);
 
 void facerec_set_samples(facerec*, const float*, const int32_t*, int);
 int facerec_classify(facerec*, const float*, float);

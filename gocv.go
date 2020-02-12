@@ -44,7 +44,7 @@ func (rec *Recognizer) detectMat(type_ int, mat gocv.Mat) (faces []Face, err err
 	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	for i := 0; i < numFaces; i++ {
-		face := Face{imagePointer: &ptr}
+		face := Face{imagePointer: ptr}
 		x0 := int(rData[i*rectLen])
 		y0 := int(rData[i*rectLen+1])
 		x1 := int(rData[i*rectLen+2])

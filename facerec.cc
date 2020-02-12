@@ -30,6 +30,10 @@ void FaceRec::setGender(const char* gender_path) {
     deserialize(std::string(gender_path)) >> gender_net_;
 }
 
+void FaceRec::setAge(const char* age_path) {
+    deserialize(std::string(age_path)) >> age_net_;
+}
+
 std::vector<rectangle> FaceRec::detect(image_t& img) {
     	std::vector<rectangle> rects;
     	std::lock_guard<std::mutex> lock(detector_mutex_);
@@ -63,29 +67,51 @@ int FaceRec::gender(image_t& img,rectangle rect) {
     std::lock_guard<std::mutex> lock(gender_net_mutex_);
 
     auto shape = sp_(img, rect);
-        
-    extract_image_chip(img, get_face_chip_details(shape, 32), face_chip);
-        
-    return int(gender_net_(face_chip));
+    
+    if (shape.num_parts()) {
+        extract_image_chip(img, get_face_chip_details(shape, 32), face_chip);
+        return int(gender_net_(face_chip));
+    }
+    
+    return 0;
+}
+
+int FaceRec::age(image_t& img,rectangle rect) {
+    image_t face_chip;
+
+    std::lock_guard<std::mutex> lock(age_net_mutex_);
+
+    snet.subnet() = age_net_.subnet();
+
+    auto shape = sp_(img, rect);
+
+    if (shape.num_parts()) {
+        float confidence;
+        extract_image_chip(img, get_face_chip_details(shape, 64), face_chip);
+        matrix<float, 1, number_of_age_classes> p = mat(snet(face_chip));
+        return int(get_estimated_age(p, confidence));
+    }
+
+    return 0;
 }
 
 std::tuple<descriptor, full_object_detection> FaceRec::recognize(image_t& img,rectangle rect) {
     full_object_detection shape;
     descriptor descr;
     image_t face_chip;
-        
+
     std::lock_guard<std::mutex> lock(net_mutex_);
-        
+
     shape = sp_(img, rect);
-        
+
     extract_image_chip(img, get_face_chip_details(shape, size, padding), face_chip);
-        
+
     if (jittering > 0) {
         descr = mean(mat(net_(jitter_image(std::move(face_chip), jittering))));
     } else {
         descr = net_(face_chip);
     }
-        
+
     return std::make_tuple(descr, shape);
 }
 
@@ -158,4 +184,18 @@ std::vector<image_t> jitter_image(
         crops.push_back(jitter_image(img,rnd));
 
     return crops;
+}
+
+// Helper function to estimage the age
+uint8_t get_estimated_age(matrix<float, 1, number_of_age_classes>& p, float& confidence)
+{
+	float estimated_age = (0.25f * p(0));
+	confidence = p(0);
+
+	for (uint16_t i = 1; i < number_of_age_classes; i++) {
+		estimated_age += (static_cast<float>(i) * p(i));
+		if (p(i) > confidence) confidence = p(i);
+	}
+
+	return std::lround(estimated_age);
 }

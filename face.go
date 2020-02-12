@@ -41,11 +41,12 @@ type Recognizer struct {
 
 // Face holds coordinates and descriptor of the human face.
 type Face struct {
-	imagePointer *C.image_pointer
+	imagePointer C.image_pointer
 	Rectangle    image.Rectangle
 	Descriptor   Descriptor
 	Shapes       []image.Point
 	Gender       Gender
+	Age          int
 }
 
 // Descriptor holds 128-dimensional feature vector.
@@ -129,6 +130,17 @@ func (rec *Recognizer) SetGender(genderPath string) (err error) {
 	return
 }
 
+func (rec *Recognizer) SetAge(agePath string) (err error) {
+	if !fileExists(agePath) {
+		err = errors.New(fmt.Sprintf("File '%s' not found!", agePath))
+		return
+	}
+	cAgePath := C.CString(agePath)
+	defer C.free(unsafe.Pointer(cAgePath))
+	C.facerec_set_age(rec.ptr, cAgePath)
+	return
+}
+
 func (rec *Recognizer) SetSize(size int) {
 	C.facerec_config_size(rec.ptr, C.ulong(size))
 }
@@ -177,8 +189,7 @@ func (rec *Recognizer) detectBuffer(type_ int, imgData []byte) (faces []Face, er
 	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	for i := 0; i < numFaces; i++ {
-		fmt.Println("pointer", &ptr)
-		face := Face{imagePointer: &ptr}
+		face := Face{imagePointer: ptr}
 		x0 := int(rData[i*rectLen])
 		y0 := int(rData[i*rectLen+1])
 		x1 := int(rData[i*rectLen+2])
@@ -221,7 +232,7 @@ func (rec *Recognizer) detectFile(type_ int, file string) (faces []Face, err err
 	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	for i := 0; i < numFaces; i++ {
-		face := Face{imagePointer: ptr}
+		face := Face{imagePointer: *ptr}
 		x0 := int(rData[i*rectLen])
 		y0 := int(rData[i*rectLen+1])
 		x1 := int(rData[i*rectLen+2])
@@ -259,7 +270,16 @@ func (rec *Recognizer) GetGender(face *Face) {
 	x1 := C.int(face.Rectangle.Max.X)
 	y1 := C.int(face.Rectangle.Max.Y)
 
-	face.Gender = Gender(int(C.facerec_gender(rec.ptr, (*C.image_pointer)(unsafe.Pointer(face.imagePointer)), x, y, x1, y1)))
+	face.Gender = Gender(int(C.facerec_gender(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1)))
+}
+
+func (rec *Recognizer) GetAge(face *Face) {
+	x := C.int(face.Rectangle.Min.X)
+	y := C.int(face.Rectangle.Min.Y)
+	x1 := C.int(face.Rectangle.Max.X)
+	y1 := C.int(face.Rectangle.Max.Y)
+
+	face.Age = int(C.facerec_age(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1))
 }
 
 func (rec *Recognizer) Recognize(face *Face) error {
@@ -268,7 +288,7 @@ func (rec *Recognizer) Recognize(face *Face) error {
 	x1 := C.int(face.Rectangle.Max.X)
 	y1 := C.int(face.Rectangle.Max.Y)
 
-	ret := C.facerec_recognize(rec.ptr, (*C.image_pointer)(unsafe.Pointer(face.imagePointer)), x, y, x1, y1)
+	ret := C.facerec_recognize(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -340,6 +360,5 @@ func fileExists(filename string) bool {
 }
 
 func (f *Face) Close() {
-	C.image_pointer_free(f.imagePointer)
-	f.imagePointer = nil
+	C.image_pointer_free(&f.imagePointer)
 }

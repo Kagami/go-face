@@ -66,6 +66,11 @@ void facerec_set_gender(facerec* rec, const char *file) {
 	cls->setGender(file);
 }
 
+void facerec_set_age(facerec* rec, const char *file) {
+	FaceRec* cls = (FaceRec*)(rec->cls);
+	cls->setAge(file);
+}
+
 facesret* facerec_detect_file(facerec* rec, image_pointer *p, const char* file,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
@@ -147,12 +152,17 @@ faceret* facerec_recognize(facerec* rec, image_pointer *p, int x, int y, int x1,
 int facerec_gender(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
     image_t img = *((image_t*)p->p);
-    int gender = 0;
 	rectangle r = rectangle(x,y,x1,y1);
-
-	gender = cls->gender(img, r);
     
-	return gender;
+	return cls->gender(img, r);
+}
+
+int facerec_age(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
+	FaceRec* cls = (FaceRec*)(rec->cls);
+    image_t img = *((image_t*)p->p);
+	rectangle r = rectangle(x,y,x1,y1);
+    
+	return cls->age(img, r);
 }
 
 void facerec_set_samples(
