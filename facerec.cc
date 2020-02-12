@@ -5,9 +5,6 @@
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/graph_utils.h>
 #include <dlib/image_io.h>
-#include <dlib/opencv.h> 
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/types_c.h>
 #include "facerec.h"
 #include "classify.h"
 

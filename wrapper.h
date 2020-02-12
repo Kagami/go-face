@@ -47,7 +47,6 @@ typedef struct faceret {
 facerec* facerec_init();
 facesret* facerec_detect_file(facerec*,  image_pointer *, const char*,int);
 facesret* facerec_detect_buffer(facerec*,  image_pointer *, unsigned char*, int, int);
-facesret* facerec_detect_mat(facerec* rec,  image_pointer *p, const void *mat,int type);
 faceret* facerec_recognize(facerec*, image_pointer*, int, int, int, int);
 int facerec_gender(facerec* rec, image_pointer *p, int x, int y, int x1, int y1);
 void facerec_set_cnn(facerec* , const char *);
