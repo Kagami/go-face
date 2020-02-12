@@ -12,7 +12,7 @@ package face
 // #cgo LDFLAGS: -lgfortran
 // #include <stdlib.h>
 // #include <stdint.h>
-// #include "facerec.h"
+// #include "wrapper.h"
 import "C"
 import (
 	"errors"
@@ -31,6 +31,13 @@ const (
 	shapeLen = 2
 )
 
+type Gender int
+
+const (
+	Female Gender = iota
+	Male
+)
+
 // A Recognizer creates face descriptors for provided images and
 // classifies them into categories.
 type Recognizer struct {
@@ -43,6 +50,7 @@ type Face struct {
 	Rectangle    image.Rectangle
 	Descriptor   Descriptor
 	Shapes       []image.Point
+	Gender       Gender
 }
 
 // Descriptor holds 128-dimensional feature vector.
@@ -68,27 +76,8 @@ func NewWithShape(r image.Rectangle, s []image.Point, d Descriptor) Face {
 // NewRecognizer returns a new recognizer interface. modelDir points to
 // directory with shape_predictor_5_face_landmarks.dat and
 // dlib_face_recognition_resnet_model_v1.dat files.
-func NewRecognizer(resnetPath, cnnResnetPath, shapePredictorPath string) (rec *Recognizer, err error) {
-	if !fileExists(resnetPath) {
-		err = errors.New(fmt.Sprintf("File '%s' not found!", resnetPath))
-		return
-	}
-	if !fileExists(cnnResnetPath) {
-		err = errors.New(fmt.Sprintf("File '%s' not found!", cnnResnetPath))
-		return
-	}
-	if !fileExists(shapePredictorPath) {
-		err = errors.New(fmt.Sprintf("File '%s' not found!", shapePredictorPath))
-		return
-	}
-	cResnetPath := C.CString(resnetPath)
-	defer C.free(unsafe.Pointer(cResnetPath))
-	cCnnResnetPath := C.CString(cnnResnetPath)
-	defer C.free(unsafe.Pointer(cCnnResnetPath))
-	cShapePredictorPath := C.CString(shapePredictorPath)
-	defer C.free(unsafe.Pointer(cShapePredictorPath))
-
-	ptr := C.facerec_init(cResnetPath, cCnnResnetPath, cShapePredictorPath)
+func NewRecognizer() (rec *Recognizer, err error) {
+	ptr := C.facerec_init()
 
 	if ptr.err_str != nil {
 		defer C.facerec_free(ptr)
@@ -101,14 +90,64 @@ func NewRecognizer(resnetPath, cnnResnetPath, shapePredictorPath string) (rec *R
 	return
 }
 
-func NewRecognizerWithConfig(resnetPath, cnnResnetPath, shapePredictorPath string, size int, padding float32, jittering int, minImageSize int) (rec *Recognizer, err error) {
-	rec, err = NewRecognizer(resnetPath, cnnResnetPath, shapePredictorPath)
-	cSize := C.ulong(size)
-	cPadding := C.double(padding)
-	cJittering := C.int(jittering)
-	cMinImageSize := C.int(minImageSize)
-	C.facerec_config(rec.ptr, cSize, cPadding, cJittering, cMinImageSize)
+func (rec *Recognizer) SetShape(shapePredictorPath string) (err error) {
+	if !fileExists(shapePredictorPath) {
+		err = errors.New(fmt.Sprintf("File '%s' not found!", shapePredictorPath))
+		return
+	}
+	cShapePredictorPath := C.CString(shapePredictorPath)
+	defer C.free(unsafe.Pointer(cShapePredictorPath))
+	C.facerec_set_shape(rec.ptr, cShapePredictorPath)
 	return
+}
+
+func (rec *Recognizer) SetDescriptor(resnetPath string) (err error) {
+	if !fileExists(resnetPath) {
+		err = errors.New(fmt.Sprintf("File '%s' not found!", resnetPath))
+		return
+	}
+	cResnetPath := C.CString(resnetPath)
+	defer C.free(unsafe.Pointer(cResnetPath))
+	C.facerec_set_descriptor(rec.ptr, cResnetPath)
+	return
+}
+
+func (rec *Recognizer) SetCNN(cnnResnetPath string) (err error) {
+	if !fileExists(cnnResnetPath) {
+		err = errors.New(fmt.Sprintf("File '%s' not found!", cnnResnetPath))
+		return
+	}
+	cCnnResnetPath := C.CString(cnnResnetPath)
+	defer C.free(unsafe.Pointer(cCnnResnetPath))
+	C.facerec_set_cnn(rec.ptr, cCnnResnetPath)
+	return
+}
+
+func (rec *Recognizer) SetGender(genderPath string) (err error) {
+	if !fileExists(genderPath) {
+		err = errors.New(fmt.Sprintf("File '%s' not found!", genderPath))
+		return
+	}
+	cGenderPath := C.CString(genderPath)
+	defer C.free(unsafe.Pointer(cGenderPath))
+	C.facerec_set_gender(rec.ptr, cGenderPath)
+	return
+}
+
+func (rec *Recognizer) SetSize(size int) {
+	C.facerec_config_size(rec.ptr, C.ulong(size))
+}
+
+func (rec *Recognizer) SetPadding(padding float32) {
+	C.facerec_config_padding(rec.ptr, C.double(padding))
+}
+
+func (rec *Recognizer) SetJittering(jittering int) {
+	C.facerec_config_jittering(rec.ptr, C.int(jittering))
+}
+
+func (rec *Recognizer) SetMinImageSize(minImageSize int) {
+	C.facerec_config_min_image_size(rec.ptr, C.int(minImageSize))
 }
 
 func (rec *Recognizer) detectBuffer(type_ int, imgData []byte) (faces []Face, err error) {
@@ -262,6 +301,15 @@ func (rec *Recognizer) DetectFromFile(imgPath string) (faces []Face, err error) 
 
 func (rec *Recognizer) DetectFromFileCNN(imgPath string) (faces []Face, err error) {
 	return rec.detectFile(1, imgPath)
+}
+
+func (rec *Recognizer) GetGender(face *Face) {
+	x := C.int(face.Rectangle.Min.X)
+	y := C.int(face.Rectangle.Min.Y)
+	x1 := C.int(face.Rectangle.Max.X)
+	y1 := C.int(face.Rectangle.Max.Y)
+
+	face.Gender = Gender(int(C.facerec_gender(rec.ptr, (*C.image_pointer)(unsafe.Pointer(face.imagePointer)), x, y, x1, y1)))
 }
 
 func (rec *Recognizer) Recognize(face *Face) error {

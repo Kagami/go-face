@@ -49,5 +49,18 @@ using anet_type = loss_metric<fc_no_bias<128,avg_pool_everything<
                             input_rgb_image_sized<150>
                             >>>>>>>>>>>>;
 
+
+template <int N, template <typename> class BN, int stride, typename SUBNET>
+using block_gender = BN<con<N, 3, 3, stride, stride, relu<BN<con<N, 3, 3, stride, stride, SUBNET>>>>>;
+
+template <int N, typename SUBNET> using res_ = relu<block_gender<N, bn_con, 1, SUBNET>>;
+template <int N, typename SUBNET> using ares_ = relu<block_gender<N, affine, 1, SUBNET>>;
+
+template <typename SUBNET> using alevel1_ = avg_pool<2, 2, 2, 2, ares_<64, SUBNET>>;
+template <typename SUBNET> using alevel2_ = avg_pool<2, 2, 2, 2, ares_<32, SUBNET>>;
+
+using agender_type = loss_multiclass_log<fc<2, multiply<relu<fc<16, multiply<alevel1_<alevel2_< input_rgb_image_sized<32>>>>>>>>>;
+
+
 #endif
 #endif /* TEMPLATE_H */
