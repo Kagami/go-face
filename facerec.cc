@@ -75,6 +75,8 @@ facesret* FaceRec::detect(facesret *ret, image_t &img, int type) {
     if (ret->num_faces == 0)
 		return ret;
 
+	std::sort(rects.begin(), rects.end());
+
 	ret->rectangles = (long*)malloc(ret->num_faces * RECT_LEN * sizeof(long));
     ret->p = new image_pointer[ret->num_faces];
 
