@@ -10,8 +10,9 @@ import (
 
 // Path to directory with models and test images. Here it's assumed it
 // points to the <https://github.com/Kagami/go-face-testdata> clone.
+const dataDir = "testdata"
 const cnn = "testdata/mmod_human_face_detector.dat"
-const shape = "testdata/shape_predictor_68_face_landmarks.dat"
+const shape = "testdata/shape_predictor_5_face_landmarks.dat"
 const descr = "testdata/dlib_face_recognition_resnet_model_v1.dat"
 const gender = "testdata/dnn_gender_classifier_v1.dat"
 const age = "testdata/dnn_age_predictor_v1.dat"
@@ -36,7 +37,7 @@ func Example_basic() {
 	rec.SetSize(150)
 	rec.SetPadding(0.25)
 	rec.SetMinImageSize(100)
-	rec.SetJittering(0)
+	rec.SetJittering(20)
 
 	// Test image with 10 faces.
 	testImagePristin := filepath.Join(dataDir, "pristin.jpg")
@@ -46,7 +47,7 @@ func Example_basic() {
 		log.Fatalf("Can't recognize: %v", err)
 	}
 	if len(faces) != 10 {
-		log.Fatalf("Wrong number of faces")
+		log.Fatalf("Wrong number of faces, %d", len(faces))
 	}
 
 	// Fill known samples. In the real world you would use a lot of images
@@ -74,8 +75,8 @@ func Example_basic() {
 	if err != nil {
 		log.Fatalf("Can't recognize: %v", err)
 	}
-	if len(faces) != 1 {
-		log.Fatalf("Wrong number of faces")
+	if len(nayoungFace) != 1 {
+		log.Fatalf("Wrong number of faces %d", len(nayoungFace))
 	}
 	rec.Recognize(&nayoungFace[0])
 
