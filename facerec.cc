@@ -35,20 +35,18 @@ void FaceRec::setAge(const char* age_path) {
 }
 
 std::vector<rectangle> FaceRec::detect(image_t& img) {
-    	std::vector<rectangle> rects;
-    	std::lock_guard<std::mutex> lock(detector_mutex_);
+    std::lock_guard<std::mutex> lock(detector_mutex_);
         
     while(img.size() < min_image_size) {
         pyramid_up(img);
     }
-        
-    rects = detector_(img);
-    return rects;
+
+    return detector_(img);
 }
 
 std::vector<rectangle> FaceRec::detectCNN(image_t& img) {
     std::vector<rectangle> rects;
-    	std::lock_guard<std::mutex> lock(cnn_net_mutex_);
+    std::lock_guard<std::mutex> lock(cnn_net_mutex_);
         
     while(img.size() < min_image_size) {
         pyramid_up(img);
@@ -58,13 +56,14 @@ std::vector<rectangle> FaceRec::detectCNN(image_t& img) {
     for (auto&& d : dets) {
         rects.push_back(d.rect);
     }
-    return rects; 
+
+    return rects;
 }
 
 int FaceRec::gender(image_t& img,rectangle rect) {
     image_t face_chip;
 
-    std::lock_guard<std::mutex> lock(gender_net_mutex_);
+    std::lock_guard<std::mutex> lock(net_mutex_);
 
     auto shape = sp_(img, rect);
     
@@ -79,7 +78,7 @@ int FaceRec::gender(image_t& img,rectangle rect) {
 int FaceRec::age(image_t& img,rectangle rect) {
     image_t face_chip;
 
-    std::lock_guard<std::mutex> lock(age_net_mutex_);
+    std::lock_guard<std::mutex> lock(net_mutex_);
 
     snet.subnet() = age_net_.subnet();
 
@@ -96,13 +95,12 @@ int FaceRec::age(image_t& img,rectangle rect) {
 }
 
 std::tuple<descriptor, full_object_detection> FaceRec::recognize(image_t& img,rectangle rect) {
-    full_object_detection shape;
     descriptor descr;
     image_t face_chip;
 
     std::lock_guard<std::mutex> lock(net_mutex_);
 
-    shape = sp_(img, rect);
+    auto shape = sp_(img, rect);
 
     extract_image_chip(img, get_face_chip_details(shape, size, padding), face_chip);
 

@@ -19,8 +19,6 @@ private:
 	std::mutex detector_mutex_;
 	std::mutex net_mutex_;
 	std::mutex cnn_net_mutex_;
-    std::mutex gender_net_mutex_;
-    std::mutex age_net_mutex_;
     
 	std::shared_mutex samples_mutex_;
     
