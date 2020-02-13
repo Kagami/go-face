@@ -12,7 +12,7 @@
 using namespace dlib;
 
 FaceRec::FaceRec() {
-		detector_ = get_frontal_face_detector();
+	detector_ = get_frontal_face_detector();
 }
 
 void FaceRec::setCNN(const char* cnn_resnet_path) {
@@ -52,6 +52,7 @@ void FaceRec::setMinImageSize(int new_min_image_size) {
 }
 
 facesret* FaceRec::detect(facesret *ret, image_t &img, int type) {
+    std::lock_guard<std::mutex> lock(detector_mutex_);
 	std::vector<rectangle> rects;
     int upped = 0;
 
@@ -61,9 +62,12 @@ facesret* FaceRec::detect(facesret *ret, image_t &img, int type) {
     }
 
     if (type == 0 ) {
-        rects = detectFront(img);
+        rects = detector_(img);
     } else {
-        rects = detectCNN(img);
+        auto dets = cnn_net_(img);
+        for (auto&& d : dets) {
+            rects.push_back(d.rect);
+        }
     }
 
     ret->num_faces = rects.size();    
@@ -78,34 +82,15 @@ facesret* FaceRec::detect(facesret *ret, image_t &img, int type) {
         ret->p[i].img = new image_t(img);
         ret->p[i].rect = new rectangle(rects[i]);
         ret->p[i].shape = 0;
-        if (upped == 0) upped = 1; 
-        ret->p[i].upped = upped;     
+        ret->p[i].upped = upped == 0?1:upped;     
 
         long* dst = ret->rectangles + i * RECT_LEN;
-        dst[0] = rects[i].left() / upped;
-        dst[1] = rects[i].top() / upped;
-        dst[2] = rects[i].right() / upped;
-        dst[3] = rects[i].bottom() / upped;
+        dst[0] = rects[i].left() / ret->p[i].upped;
+        dst[1] = rects[i].top() / ret->p[i].upped;
+        dst[2] = rects[i].right() / ret->p[i].upped;
+        dst[3] = rects[i].bottom() / ret->p[i].upped;
     }
 	return ret;
-}
-
-std::vector<rectangle> FaceRec::detectFront(image_t& img) {
-    std::lock_guard<std::mutex> lock(detector_mutex_);
-
-    return detector_(img);
-}
-
-std::vector<rectangle> FaceRec::detectCNN(image_t& img) {
-    std::vector<rectangle> rects;
-    std::lock_guard<std::mutex> lock(cnn_net_mutex_);
-
-	auto dets = cnn_net_(img);
-    for (auto&& d : dets) {
-        rects.push_back(d.rect);
-    }
-
-    return rects;
 }
 
 int FaceRec::gender(image_pointer *p) {

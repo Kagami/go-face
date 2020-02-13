@@ -15,9 +15,18 @@ facesret* facerec_detect_from_mat(facerec* rec, const void *mat,int type) {
 
 	try {
         cv::Mat *mat_img = (cv::Mat*)mat;
+        if (!mat_img) {
+            ret->err_code = UNKNOWN_ERROR;
+            return ret;
+        }
         IplImage ipl_img = cvIplImage(*mat_img);
-		cv_image<bgr_pixel> dlib_img(&ipl_img);
-        assign_image(img, dlib_img);
+        if (mat_img->channels() > 1) {
+		    cv_image<bgr_pixel> dlib_img(&ipl_img);
+            assign_image(img, dlib_img);
+        } else {
+            cv_image<uchar> dlib_img(&ipl_img);
+            assign_image(img, dlib_img);
+        }
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;

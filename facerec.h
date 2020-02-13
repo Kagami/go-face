@@ -18,7 +18,6 @@ class FaceRec {
 private:
 	std::mutex detector_mutex_;
 	std::mutex net_mutex_;
-	std::mutex cnn_net_mutex_;
     
 	std::shared_mutex samples_mutex_;
     
@@ -54,8 +53,6 @@ public:
     void setMinImageSize(int);
 
     facesret* detect(facesret *, image_t &, int);
-    std::vector<rectangle> detectFront(image_t&);
-    std::vector<rectangle> detectCNN(image_t&);
     
     std::tuple<descriptor, full_object_detection> recognize(image_pointer *);
     
