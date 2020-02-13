@@ -25,6 +25,7 @@ typedef struct image_pointer {
     void *img;
     void *shape;
     void *rect;
+    int upped;
 } image_pointer;
 
 typedef struct facesret {

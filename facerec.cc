@@ -35,12 +35,63 @@ void FaceRec::setAge(const char* age_path) {
     deserialize(std::string(age_path)) >> age_net_;
 }
 
-std::vector<rectangle> FaceRec::detect(image_t& img) {
-    std::lock_guard<std::mutex> lock(detector_mutex_);
-        
+void FaceRec::setSize(unsigned long new_size) {
+    size = new_size;
+}
+
+void FaceRec::setPadding(double new_padding) {
+    padding = new_padding;
+}
+
+void FaceRec::setJittering(int new_jittering) {
+    jittering = new_jittering;
+}
+
+void FaceRec::setMinImageSize(int new_min_image_size) {
+    min_image_size = new_min_image_size;
+}
+
+facesret* FaceRec::detect(facesret *ret, image_t &img, int type) {
+	std::vector<rectangle> rects;
+    int upped = 0;
+
     while(img.size() < min_image_size) {
         pyramid_up(img);
+        upped += 2;
     }
+
+    if (type == 0 ) {
+        rects = detectFront(img);
+    } else {
+        rects = detectCNN(img);
+    }
+
+    ret->num_faces = rects.size();    
+
+    if (ret->num_faces == 0)
+		return ret;
+
+	ret->rectangles = (long*)malloc(ret->num_faces * RECT_LEN * sizeof(long));
+    ret->p = new image_pointer[ret->num_faces];
+
+	for (int i = 0; i < ret->num_faces; i++) {
+        ret->p[i].img = new image_t(img);
+        ret->p[i].rect = new rectangle(rects[i]);
+        ret->p[i].shape = 0;
+        if (upped == 0) upped = 1; 
+        ret->p[i].upped = upped;     
+
+        long* dst = ret->rectangles + i * RECT_LEN;
+        dst[0] = rects[i].left() / upped;
+        dst[1] = rects[i].top() / upped;
+        dst[2] = rects[i].right() / upped;
+        dst[3] = rects[i].bottom() / upped;
+    }
+	return ret;
+}
+
+std::vector<rectangle> FaceRec::detectFront(image_t& img) {
+    std::lock_guard<std::mutex> lock(detector_mutex_);
 
     return detector_(img);
 }
@@ -48,10 +99,6 @@ std::vector<rectangle> FaceRec::detect(image_t& img) {
 std::vector<rectangle> FaceRec::detectCNN(image_t& img) {
     std::vector<rectangle> rects;
     std::lock_guard<std::mutex> lock(cnn_net_mutex_);
-
-    while(img.size() < min_image_size) {
-        pyramid_up(img);
-    }
 
 	auto dets = cnn_net_(img);
     for (auto&& d : dets) {
@@ -135,53 +182,6 @@ std::tuple<descriptor, full_object_detection> FaceRec::recognize(image_pointer *
     }
 
     return std::make_tuple(descr, shape);
-}
-
-void FaceRec::setSize(unsigned long new_size) {
-    size = new_size;
-}
-
-void FaceRec::setPadding(double new_padding) {
-    padding = new_padding;
-}
-
-void FaceRec::setJittering(int new_jittering) {
-    jittering = new_jittering;
-}
-
-void FaceRec::setMinImageSize(int new_min_image_size) {
-    min_image_size = new_min_image_size;
-}
-
-facesret* facerec_detect(facesret *ret, facerec* rec, image_t &img, int type) {
-	FaceRec* cls = (FaceRec*)(rec->cls);
-	std::vector<rectangle> rects;
-
-    if (type == 0 ) {
-        rects = cls->detect(img);
-    } else {
-        rects = cls->detectCNN(img);
-    }
-
-    ret->num_faces = rects.size();    
-
-    if (ret->num_faces == 0)
-		return ret;
-
-	ret->rectangles = (long*)malloc(ret->num_faces * RECT_LEN * sizeof(long));
-    ret->p = new image_pointer[ret->num_faces];
-
-	for (int i = 0; i < ret->num_faces; i++) {
-        ret->p[i].img = new image_t(img);
-        ret->p[i].rect = new rectangle(rects[i]);
-        ret->p[i].shape = 0;     
-        long* dst = ret->rectangles + i * RECT_LEN;
-        dst[0] = rects[i].left();
-        dst[1] = rects[i].top();
-        dst[2] = rects[i].right();
-        dst[3] = rects[i].bottom();
-    }
-	return ret;
 }
 
 // Classify

@@ -53,7 +53,8 @@ public:
     void setJittering(int);
     void setMinImageSize(int);
 
-    std::vector<rectangle> detect(image_t&);
+    facesret* detect(facesret *, image_t &, int);
+    std::vector<rectangle> detectFront(image_t&);
     std::vector<rectangle> detectCNN(image_t&);
     
     std::tuple<descriptor, full_object_detection> recognize(image_pointer *);

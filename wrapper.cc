@@ -73,6 +73,7 @@ void facerec_set_age(facerec* rec, const char *file) {
 
 facesret* facerec_detect_from_file(facerec* rec, const char* file,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
+    FaceRec* cls = (FaceRec*)(rec->cls);
 	image_t img;
 
 	try {
@@ -89,10 +90,11 @@ facesret* facerec_detect_from_file(facerec* rec, const char* file,int type) {
 		return ret;
 	}
     
-    return facerec_detect(ret, rec, img, type);
+    return cls->detect(ret, img, type);
 }
 
 facesret* facerec_detect_from_buffer(facerec* rec, unsigned char* img_data, int len,int type) {
+    FaceRec* cls = (FaceRec*)(rec->cls);
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
 
@@ -109,7 +111,7 @@ facesret* facerec_detect_from_buffer(facerec* rec, unsigned char* img_data, int 
 		return ret;
 	}
     
-    return facerec_detect(ret, rec, img, type);
+    return cls->detect(ret, img, type);
 }
 
 faceret* facerec_recognize(facerec* rec, image_pointer *p) {
@@ -128,8 +130,8 @@ faceret* facerec_recognize(facerec* rec, image_pointer *p) {
 
         long* dst = ret->shape;
 	    for (int j = 0; j < ret->num_shape; j++) {
-		    dst[j*SHAPE_LEN] = shape.part(j).x();
-		    dst[j*SHAPE_LEN+1] = shape.part(j).y();
+		    dst[j*SHAPE_LEN] = shape.part(j).x() / p->upped;
+		    dst[j*SHAPE_LEN+1] = shape.part(j).y() / p->upped;
         }
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());

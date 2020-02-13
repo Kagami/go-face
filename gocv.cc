@@ -9,6 +9,7 @@
 using namespace dlib;
 
 facesret* facerec_detect_from_mat(facerec* rec, const void *mat,int type) {
+    FaceRec* cls = (FaceRec*)(rec->cls);
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
 
@@ -27,5 +28,5 @@ facesret* facerec_detect_from_mat(facerec* rec, const void *mat,int type) {
 		return ret;
 	}
     
-    return facerec_detect(ret, rec, img, type);
+    return cls->detect(ret, img, type);
 }
