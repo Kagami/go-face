@@ -8,14 +8,13 @@
 
 using namespace dlib;
 
-facesret* facerec_detect_from_mat(facerec* rec, image_pointer *p, const void *mat,int type) {
+facesret* facerec_detect_from_mat(facerec* rec, const void *mat,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
-	std::vector<rectangle> rects;
-    cv::Mat *mat_img = new cv::Mat(*((cv::Mat*)mat));
-    IplImage ipl_img = cvIplImage(*mat_img);
-    
+
 	try {
+        cv::Mat *mat_img = (cv::Mat*)mat;
+        IplImage ipl_img = cvIplImage(*mat_img);
 		cv_image<bgr_pixel> dlib_img(&ipl_img);
         assign_image(img, dlib_img);
 	} catch(image_load_error& e) {
@@ -28,5 +27,5 @@ facesret* facerec_detect_from_mat(facerec* rec, image_pointer *p, const void *ma
 		return ret;
 	}
     
-    return facerec_detect(ret, p, rec, img, type);
+    return facerec_detect(ret, rec, img, type);
 }

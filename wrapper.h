@@ -22,10 +22,13 @@ typedef struct facerec {
 } facerec;
 
 typedef struct image_pointer {
-    void *p;
+    void *img;
+    void *shape;
+    void *rect;
 } image_pointer;
 
 typedef struct facesret {
+    image_pointer *p;
 	int num_faces;
 	long* rectangles;
 	const char* err_str;
@@ -45,12 +48,12 @@ typedef struct faceret {
 #define SHAPE_LEN  2
 
 facerec* facerec_init();
-facesret* facerec_detect_from_file(facerec*,  image_pointer *, const char*,int);
-facesret* facerec_detect_from_buffer(facerec*,  image_pointer *, unsigned char*, int, int);
-faceret* facerec_recognize(facerec*, image_pointer*, int, int, int, int);
+facesret* facerec_detect_from_file(facerec*, const char*,int);
+facesret* facerec_detect_from_buffer(facerec*, unsigned char*, int, int);
+faceret* facerec_recognize(facerec*, image_pointer*);
 
-int facerec_get_gender(facerec* rec, image_pointer *, int, int, int, int);
-int facerec_get_age(facerec* rec, image_pointer *, int, int, int, int);
+int facerec_get_gender(facerec* rec, image_pointer *);
+int facerec_get_age(facerec* rec, image_pointer *);
 
 void facerec_set_cnn(facerec* , const char *);
 void facerec_set_shape(facerec* , const char *);

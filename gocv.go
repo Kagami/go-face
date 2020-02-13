@@ -21,9 +21,8 @@ import (
 
 func (rec *Recognizer) detectFromMat(type_ int, mat gocv.Mat) (faces []Face, err error) {
 	cType := C.int(type_)
-	var ptr C.image_pointer
 
-	ret := C.facerec_detect_from_mat(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), unsafe.Pointer(mat.Ptr()), cType)
+	ret := C.facerec_detect_from_mat(rec.ptr, unsafe.Pointer(mat.Ptr()), cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -39,13 +38,16 @@ func (rec *Recognizer) detectFromMat(type_ int, mat gocv.Mat) (faces []Face, err
 
 	// Copy faces data to Go structure.
 	defer C.free(unsafe.Pointer(ret.rectangles))
+	defer C.free(unsafe.Pointer(ret.p))
 
+	rPtr := unsafe.Pointer(ret.p)
+	rP := (*[1 << 30]C.image_pointer)(rPtr)[:numFaces:numFaces]
 	rDataLen := numFaces * rectLen
 	rDataPtr := unsafe.Pointer(ret.rectangles)
 	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	for i := 0; i < numFaces; i++ {
-		face := Face{imagePointer: ptr}
+		face := Face{imagePointer: rP[i]}
 		x0 := int(rData[i*rectLen])
 		y0 := int(rData[i*rectLen+1])
 		x1 := int(rData[i*rectLen+2])

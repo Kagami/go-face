@@ -71,10 +71,9 @@ void facerec_set_age(facerec* rec, const char *file) {
 	cls->setAge(file);
 }
 
-facesret* facerec_detect_from_file(facerec* rec, image_pointer *p, const char* file,int type) {
+facesret* facerec_detect_from_file(facerec* rec, const char* file,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
-	std::vector<rectangle> rects;
 
 	try {
 		// TODO(Kagami): Support more file types?
@@ -90,13 +89,12 @@ facesret* facerec_detect_from_file(facerec* rec, image_pointer *p, const char* f
 		return ret;
 	}
     
-    return facerec_detect(ret, p, rec, img, type);
+    return facerec_detect(ret, rec, img, type);
 }
 
-facesret* facerec_detect_from_buffer(facerec* rec, image_pointer *p, unsigned char* img_data, int len,int type) {
+facesret* facerec_detect_from_buffer(facerec* rec, unsigned char* img_data, int len,int type) {
 	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
 	image_t img;
-	std::vector<rectangle> rects;
 
 	try {
 		// TODO(Kagami): Support more file types?
@@ -111,58 +109,47 @@ facesret* facerec_detect_from_buffer(facerec* rec, image_pointer *p, unsigned ch
 		return ret;
 	}
     
-    return facerec_detect(ret, p, rec, img, type);
+    return facerec_detect(ret, rec, img, type);
 }
 
-faceret* facerec_recognize(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
+faceret* facerec_recognize(facerec* rec, image_pointer *p) {
     faceret* ret = (faceret*)calloc(1, sizeof(faceret));
-	FaceRec* cls = (FaceRec*)(rec->cls);
-    image_t img = *((image_t*)p->p);
+    FaceRec* cls = (FaceRec*)(rec->cls);
 
-	descriptor descr;
-	full_object_detection shape;
-	rectangle r = rectangle(x,y,x1,y1);
+    try {
+        descriptor descr;
+	    full_object_detection shape;
+        std::tie(descr, shape) = cls->recognize(p);
+        ret->descriptor = (float*)malloc(DESCR_LEN * sizeof(float));
+        memcpy((uint8_t*)(ret->descriptor), (void*)&descr(0,0), DESCR_LEN * sizeof(float));
 
-   try {
-		std::tie(descr, shape) = cls->recognize(img, r);
+        ret->num_shape = shape.num_parts();
+        ret->shape = (long*)malloc(ret->num_shape * SHAPE_LEN * sizeof(long));
+
+        long* dst = ret->shape;
+	    for (int j = 0; j < ret->num_shape; j++) {
+		    dst[j*SHAPE_LEN] = shape.part(j).x();
+		    dst[j*SHAPE_LEN+1] = shape.part(j).y();
+        }
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;
-		return ret;
 	} catch (std::exception& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = UNKNOWN_ERROR;
-		return ret;
 	}
-	ret->descriptor = (float*)malloc(DESCR_LEN * sizeof(float));
-	memcpy((uint8_t*)(ret->descriptor), (void*)&descr(0,0), DESCR_LEN * sizeof(float));
-	
-	ret->num_shape = shape.num_parts();
-	ret->shape = (long*)malloc(ret->num_shape * SHAPE_LEN * sizeof(long));
 
-	long* dst = ret->shape;
-	for (int j = 0; j < ret->num_shape; j++) {
-		dst[j*SHAPE_LEN] = shape.part(j).x();
-		dst[j*SHAPE_LEN+1] = shape.part(j).y();
-    }
-    
 	return ret;
 }
 
-int facerec_get_gender(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
-	FaceRec* cls = (FaceRec*)(rec->cls);
-    image_t img = *((image_t*)p->p);
-	rectangle r = rectangle(x,y,x1,y1);
-    
-	return cls->gender(img, r);
+int facerec_get_gender(facerec* rec, image_pointer *p) {
+	FaceRec* cls = (FaceRec*)(rec->cls);    
+	return cls->gender(p);
 }
 
-int facerec_get_age(facerec* rec, image_pointer *p, int x, int y, int x1, int y1) {
-	FaceRec* cls = (FaceRec*)(rec->cls);
-    image_t img = *((image_t*)p->p);
-	rectangle r = rectangle(x,y,x1,y1);
-    
-	return cls->age(img, r);
+int facerec_get_age(facerec* rec, image_pointer *p) {
+	FaceRec* cls = (FaceRec*)(rec->cls);    
+	return cls->age(p);
 }
 
 void facerec_set_samples(
@@ -201,10 +188,10 @@ void facerec_free(facerec* rec) {
 
 void image_pointer_free(image_pointer* p) {
 	if (p) {
-		if (p->p) {
-			image_t *img = ((image_t*)p->p);
+		if (p->img) {
+			image_t *img = ((image_t*)p->img);
 			delete img;
-			p->p = NULL;
+			p->img = NULL;
 		}
 	}
 }

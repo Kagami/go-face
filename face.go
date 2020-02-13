@@ -165,9 +165,8 @@ func (rec *Recognizer) detectFromBuffer(type_ int, imgData []byte) (faces []Face
 	cImgData := (*C.uchar)(&imgData[0])
 	cLen := C.int(len(imgData))
 	cType := C.int(type_)
-	var ptr C.image_pointer
 
-	ret := C.facerec_detect_from_buffer(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), cImgData, cLen, cType)
+	ret := C.facerec_detect_from_buffer(rec.ptr, cImgData, cLen, cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -183,13 +182,17 @@ func (rec *Recognizer) detectFromBuffer(type_ int, imgData []byte) (faces []Face
 
 	// Copy faces data to Go structure.
 	defer C.free(unsafe.Pointer(ret.rectangles))
+	defer C.free(unsafe.Pointer(ret.p))
+
+	rPtr := unsafe.Pointer(ret.p)
+	rP := (*[1 << 30]C.image_pointer)(rPtr)[:numFaces:numFaces]
 
 	rDataLen := numFaces * rectLen
 	rDataPtr := unsafe.Pointer(ret.rectangles)
 	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	for i := 0; i < numFaces; i++ {
-		face := Face{imagePointer: ptr}
+		face := Face{imagePointer: rP[i]}
 		x0 := int(rData[i*rectLen])
 		y0 := int(rData[i*rectLen+1])
 		x1 := int(rData[i*rectLen+2])
@@ -209,8 +212,7 @@ func (rec *Recognizer) detectFromFile(type_ int, file string) (faces []Face, err
 	cType := C.int(type_)
 	cFile := C.CString(file)
 	defer C.free(unsafe.Pointer(cFile))
-	var ptr C.image_pointer
-	ret := C.facerec_detect_from_file(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&ptr)), cFile, cType)
+	ret := C.facerec_detect_from_file(rec.ptr, cFile, cType)
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {
@@ -226,13 +228,17 @@ func (rec *Recognizer) detectFromFile(type_ int, file string) (faces []Face, err
 
 	// Copy faces data to Go structure.
 	defer C.free(unsafe.Pointer(ret.rectangles))
+	defer C.free(unsafe.Pointer(ret.p))
+
+	rPtr := unsafe.Pointer(ret.p)
+	rP := (*[1 << 30]C.image_pointer)(rPtr)[:numFaces:numFaces]
 
 	rDataLen := numFaces * rectLen
 	rDataPtr := unsafe.Pointer(ret.rectangles)
 	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	for i := 0; i < numFaces; i++ {
-		face := Face{imagePointer: ptr}
+		face := Face{imagePointer: rP[i]}
 		x0 := int(rData[i*rectLen])
 		y0 := int(rData[i*rectLen+1])
 		x1 := int(rData[i*rectLen+2])
@@ -265,30 +271,15 @@ func (rec *Recognizer) DetectFromFileCNN(imgPath string) (faces []Face, err erro
 }
 
 func (rec *Recognizer) GetGender(face *Face) {
-	x := C.int(face.Rectangle.Min.X)
-	y := C.int(face.Rectangle.Min.Y)
-	x1 := C.int(face.Rectangle.Max.X)
-	y1 := C.int(face.Rectangle.Max.Y)
-
-	face.Gender = Gender(int(C.facerec_get_gender(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1)))
+	face.Gender = Gender(int(C.facerec_get_gender(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)))))
 }
 
 func (rec *Recognizer) GetAge(face *Face) {
-	x := C.int(face.Rectangle.Min.X)
-	y := C.int(face.Rectangle.Min.Y)
-	x1 := C.int(face.Rectangle.Max.X)
-	y1 := C.int(face.Rectangle.Max.Y)
-
-	face.Age = int(C.facerec_get_age(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1))
+	face.Age = int(C.facerec_get_age(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer))))
 }
 
 func (rec *Recognizer) Recognize(face *Face) error {
-	x := C.int(face.Rectangle.Min.X)
-	y := C.int(face.Rectangle.Min.Y)
-	x1 := C.int(face.Rectangle.Max.X)
-	y1 := C.int(face.Rectangle.Max.Y)
-
-	ret := C.facerec_recognize(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)), x, y, x1, y1)
+	ret := C.facerec_recognize(rec.ptr, (*C.image_pointer)(unsafe.Pointer(&face.imagePointer)))
 	defer C.free(unsafe.Pointer(ret))
 
 	if ret.err_str != nil {

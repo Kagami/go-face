@@ -37,7 +37,7 @@ private:
 	int jittering = 0;
 	unsigned long size = 150;
 	double padding = 0.25;
-    int min_image_size;
+    int min_image_size = 0;
     
 public:
 	FaceRec();
@@ -53,19 +53,20 @@ public:
     void setJittering(int);
     void setMinImageSize(int);
 
-    int gender(image_t& img,rectangle);
-    int age(image_t& img,rectangle);
     std::vector<rectangle> detect(image_t&);
     std::vector<rectangle> detectCNN(image_t&);
-    std::tuple<descriptor, full_object_detection> recognize(image_t&,rectangle);
+    
+    std::tuple<descriptor, full_object_detection> recognize(image_pointer *);
+    
+    int gender(image_pointer *);
+    int age(image_pointer *);
     
 	void setSamples(std::vector<descriptor>&&, std::vector<int>&&);
 	int classify(const descriptor&, float);
 };
 
-std::vector<image_t> jitter_image(const image_t& img,int count);
-facesret* facerec_detect(facesret*,  image_pointer *, facerec*,  image_t&, int);
-uint8_t get_estimated_age(matrix<float, 1, number_of_age_classes>&, float&);
+facesret* facerec_detect(facesret*, facerec*,  image_t&, int);
+
 #else
 typedef void *image_t;
 #endif
