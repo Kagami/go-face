@@ -1,7 +1,7 @@
 package face
 
 // #include <stdint.h>
-// #include "facerec.h"
+// #include "wrapper.h"
 import "C"
 
 // An ImageLoadError is returned when provided image file is corrupted.

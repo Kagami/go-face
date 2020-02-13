@@ -2,7 +2,7 @@
 #include <dlib/graph_utils.h>
 #include "classify.h"
 
-int classify(
+int classify_(
 	const std::vector<descriptor>& samples,
 	const std::vector<int>& cats,
 	const descriptor& test_sample,

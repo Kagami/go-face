@@ -1,40 +1,71 @@
 #pragma once
+#ifndef FACEREC_H
+#define FACEREC_H
 
 #ifdef __cplusplus
-extern "C" {
+#include <shared_mutex>
+#include <dlib/dnn.h>
+#include <dlib/image_loader/image_loader.h>
+#include <dlib/image_processing/frontal_face_detector.h>
+#include <dlib/graph_utils.h>
+#include "wrapper.h"
+#include "classify.h"
+#include "template.h"
+
+typedef matrix<rgb_pixel> image_t;
+
+class FaceRec {   
+private:
+	std::mutex detector_mutex_;
+	std::mutex net_mutex_;
+    
+	std::shared_mutex samples_mutex_;
+    
+	dlib::frontal_face_detector detector_;
+	dlib::shape_predictor sp_;
+    
+	anet_type net_;
+	cnn_anet_type cnn_net_;
+    agender_type gender_net_;
+    apredictor_t age_net_;
+    
+    softmax<apredictor_t::subnet_type> snet;
+    
+	std::vector<descriptor> samples_;
+	std::vector<int> cats_;
+	int jittering = 0;
+	unsigned long size = 150;
+	double padding = 0.25;
+    int min_image_size = 0;
+    
+public:
+	FaceRec();
+    
+    void setCNN(const char*);
+    void setShape(const char*);
+    void setDescriptor(const char*);
+    void setGender(const char*);
+    void setAge(const char* age_path);
+    
+    void setSize(unsigned long);
+    void setPadding(double);
+    void setJittering(int);
+    void setMinImageSize(int);
+
+    facesret* detect(facesret *, image_t &, int);
+    
+    std::tuple<descriptor, full_object_detection> recognize(image_pointer *);
+    
+    int gender(image_pointer *);
+    int age(image_pointer *);
+    
+	void setSamples(std::vector<descriptor>&&, std::vector<int>&&);
+	int classify(const descriptor&, float);
+};
+
+facesret* facerec_detect(facesret*, facerec*,  image_t&, int);
+
+#else
+typedef void *image_t;
 #endif
-
-typedef enum {
-	IMAGE_LOAD_ERROR,
-	SERIALIZATION_ERROR,
-	UNKNOWN_ERROR,
-} err_code;
-
-typedef struct facerec {
-	void* cls;
-	const char* err_str;
-	err_code err_code;
-	int jittering;
-	unsigned long size;
-	double padding;
-} facerec;
-
-typedef struct faceret {
-	int num_faces;
-	long* rectangles;
-	float* descriptors;
-	int num_shapes;
-	long* shapes;
-	const char* err_str;
-	err_code err_code;
-} faceret;
-
-facerec* facerec_init(const char* model_dir);
-faceret* facerec_recognize(facerec* rec, const uint8_t* img_data, int len, int max_faces,int type);
-void facerec_set_samples(facerec* rec, const float* descriptors, const int32_t* cats, int len);
-int facerec_classify(facerec* rec, const float* descriptor, float tolerance);
-void facerec_free(facerec* rec);
-void facerec_config(facerec* rec, unsigned long size, double padding, int jittering);
-#ifdef __cplusplus
-}
-#endif
+#endif /* FACEREC_H */

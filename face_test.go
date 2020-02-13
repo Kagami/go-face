@@ -117,10 +117,12 @@ func getTrainData(idata *IdolData) (tdata *TrainData) {
 
 func recognizeAndClassify(fpath string, tolerance float32) (id int, err error) {
 	id = -1
-	f, err := rec.RecognizeSingleFile(fpath)
-	if err != nil || f == nil {
+	faces, err := rec.DetectFromFile(fpath)
+	if err != nil || len(faces) <= 0 {
 		return
 	}
+	f := faces[0]
+	rec.Recognize(&f)
 	if tolerance < 0 {
 		id = rec.Classify(f.Descriptor)
 	} else {
@@ -129,26 +131,29 @@ func recognizeAndClassify(fpath string, tolerance float32) (id int, err error) {
 	return
 }
 
-func TestSerializationError(t *testing.T) {
-	_, err := face.NewRecognizer("/notexist")
+/*func TestSerializationError(t *testing.T) {
+	_, err := face.NewRecognizer()
 	switch err.(type) {
 	case face.SerializationError:
 		// skip
 	default:
 		t.Fatalf("Wrong error: %v", err)
 	}
-}
+}*/
 
 func TestInit(t *testing.T) {
 	var err error
-	rec, err = face.NewRecognizer("testdata")
+	rec, err = face.NewRecognizer()
 	if err != nil {
 		t.Fatalf("Can't init face recognizer: %v", err)
 	}
+	rec.SetCNNModel(cnn)
+	rec.SetDescriptorModel(descr)
+	rec.SetShapeModel(shape)
 }
 
 func TestImageLoadError(t *testing.T) {
-	_, err := rec.Recognize([]byte{1, 2, 3})
+	_, err := rec.DetectFromBuffer([]byte{1, 2, 3})
 	switch err.(type) {
 	case face.ImageLoadError:
 		// skip
@@ -158,7 +163,7 @@ func TestImageLoadError(t *testing.T) {
 }
 
 func TestNumFaces(t *testing.T) {
-	faces, err := rec.RecognizeFile(getTPath("pristin.jpg"))
+	faces, err := rec.DetectFromFile(getTPath("pristin.jpg"))
 	if err != nil {
 		t.Fatalf("Can't get faces: %v", err)
 	}
