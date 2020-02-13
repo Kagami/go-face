@@ -13,6 +13,7 @@ package face
 import "C"
 import (
 	"image"
+	"image/color"
 	"unsafe"
 
 	"gocv.io/x/gocv"
@@ -61,4 +62,62 @@ func (rec *Recognizer) DetectFromMat(mat gocv.Mat) (faces []Face, err error) {
 
 func (rec *Recognizer) DetectFromMatCNN(mat gocv.Mat) (faces []Face, err error) {
 	return rec.detectFromMat(1, mat)
+}
+
+func RenderFaceDetections(img *gocv.Mat, Shapes []image.Point, col color.RGBA, thickness int) {
+	if len(Shapes) == 5 {
+		gocv.Line(img, Shapes[0], Shapes[1], col, thickness)
+		gocv.Line(img, Shapes[1], Shapes[4], col, thickness)
+		gocv.Line(img, Shapes[4], Shapes[3], col, thickness)
+		gocv.Line(img, Shapes[3], Shapes[2], col, thickness)
+	} else {
+		// Around Chin. Ear to Ear
+		for i := 1; i <= 16; i++ {
+			gocv.Line(img, Shapes[i], Shapes[i-1], col, thickness)
+		}
+
+		// Line on top of nose
+		for i := 28; i <= 30; i++ {
+			gocv.Line(img, Shapes[i], Shapes[i-1], col, thickness)
+		}
+
+		// left eyebrow
+		for i := 18; i <= 21; i++ {
+			gocv.Line(img, Shapes[i], Shapes[i-1], col, thickness)
+		}
+		// Right eyebrow
+		for i := 23; i <= 26; i++ {
+			gocv.Line(img, Shapes[i], Shapes[i-1], col, thickness)
+		}
+		// Bottom part of the nose
+		for i := 31; i <= 35; i++ {
+			gocv.Line(img, Shapes[i], Shapes[i-1], col, thickness)
+		}
+		// Line from the nose to the bottom part above
+		gocv.Line(img, Shapes[30], Shapes[35], col, thickness)
+
+		// Left eye
+		for i := 37; i <= 41; i++ {
+			gocv.Line(img, Shapes[i], Shapes[i-1], col, thickness)
+		}
+		gocv.Line(img, Shapes[36], Shapes[41], col, thickness)
+
+		// Right eye
+		for i := 43; i <= 47; i++ {
+			gocv.Line(img, Shapes[i], Shapes[i-1], col, thickness)
+		}
+		gocv.Line(img, Shapes[42], Shapes[47], col, thickness)
+
+		// Lips outer part
+		for i := 49; i <= 59; i++ {
+			gocv.Line(img, Shapes[i], Shapes[i-1], col, thickness)
+		}
+		gocv.Line(img, Shapes[48], Shapes[59], col, thickness)
+
+		// Lips inside part
+		for i := 61; i <= 67; i++ {
+			gocv.Line(img, Shapes[i], Shapes[i-1], col, thickness)
+		}
+		gocv.Line(img, Shapes[60], Shapes[67], col, thickness)
+	}
 }
