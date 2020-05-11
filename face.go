@@ -1,8 +1,7 @@
 package face
 
-// #cgo pkg-config: dlib-1
 // #cgo CXXFLAGS: -std=c++1z -Wall -O3 -DNDEBUG -march=native
-// #cgo LDFLAGS: -ljpeg
+// #cgo LDFLAGS: -ldlib -lblas -llapack -ljpeg
 // #include <stdlib.h>
 // #include <stdint.h>
 // #include "facerec.h"

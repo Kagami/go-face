@@ -11,17 +11,6 @@ article for some background details if you're new to
 To compile go-face you need to have dlib (>= 19.10) and libjpeg development
 packages installed.
 
-### Ubuntu 16.04, Ubuntu 18.04
-
-You may use [dlib PPA](https://launchpad.net/~kagamih/+archive/ubuntu/dlib)
-which contains latest dlib package compiled with Intel MKL support:
-
-```bash
-sudo add-apt-repository ppa:kagamih/dlib
-sudo apt-get update
-sudo apt-get install libdlib-dev libjpeg-turbo8-dev
-```
-
 ### Ubuntu 18.10+, Debian sid
 
 Latest versions of Ubuntu and Debian provide suitable dlib package so just run:
@@ -33,29 +22,12 @@ sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg-turbo8-dev
 sudo apt-get install libdlib-dev libblas-dev liblapack-dev libjpeg62-turbo-dev
 ```
 
-**ONLY FOR UBUNTU 18.10+ AND DEBIAN SID:**  
-It won't install pkgconfig metadata file so create one in
-`/usr/local/lib/pkgconfig/dlib-1.pc` with the following content:
-
-```
-libdir=/usr/lib/x86_64-linux-gnu
-includedir=/usr/include
-
-Name: dlib
-Description: Numerical and networking C++ library
-Version: 19.10.0
-Libs: -L${libdir} -ldlib -lblas -llapack
-Cflags: -I${includedir}
-Requires:
-```
-
 ### macOS
 
 Make sure you have [Homebrew](https://brew.sh) installed.
 
 ```bash
-brew install pkg-config dlib
-sed -i '' 's/^Libs: .*/& -lblas -llapack/' /usr/local/lib/pkgconfig/dlib-1.pc
+brew install dlib
 ```
 
 ### Windows
@@ -65,7 +37,7 @@ Make sure you have [MSYS2](https://www.msys2.org) installed.
 1. Run `MSYS2 MSYS` shell from Start menu
 2. Run `pacman -Syu` and if it asks you to close the shell do that
 3. Run `pacman -Syu` again
-4. Run `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-dlib mingw-w64-x86_64-pkg-config`
+4. Run `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-dlib`
 5.
    1. If you already have Go and Git installed and available in PATH uncomment
       `set MSYS2_PATH_TYPE=inherit` line in `msys2_shell.cmd` located in MSYS2
