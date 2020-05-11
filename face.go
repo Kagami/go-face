@@ -19,6 +19,12 @@ const (
 	rectLen  = 4
 	descrLen = 128
 	shapeLen = 2
+
+	// We get first 2^20 elements of array of shapes
+	// (68 shapes per face in case of shape_predictor_68_face_landmarks.dat.bz2).
+	// 68*shapeLen is bigger than rectLen and descrLen.
+	maxElements  = 1 << 20
+	maxFaceLimit = maxElements / (68 * shapeLen)
 )
 
 // A Recognizer creates face descriptors for provided images and
@@ -87,6 +93,9 @@ func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces
 		err = ImageLoadError("Empty image")
 		return
 	}
+	if maxFaces > maxFaceLimit {
+		maxFaces = maxFaceLimit
+	}
 	cImgData := (*C.uint8_t)(&imgData[0])
 	cLen := C.int(len(imgData))
 	cMaxFaces := C.int(maxFaces)
@@ -114,15 +123,15 @@ func (rec *Recognizer) recognize(type_ int, imgData []byte, maxFaces int) (faces
 
 	rDataLen := numFaces * rectLen
 	rDataPtr := unsafe.Pointer(ret.rectangles)
-	rData := (*[1 << 30]C.long)(rDataPtr)[:rDataLen:rDataLen]
+	rData := (*[maxElements]C.long)(rDataPtr)[:rDataLen:rDataLen]
 
 	dDataLen := numFaces * descrLen
 	dDataPtr := unsafe.Pointer(ret.descriptors)
-	dData := (*[1 << 30]float32)(dDataPtr)[:dDataLen:dDataLen]
+	dData := (*[maxElements]float32)(dDataPtr)[:dDataLen:dDataLen]
 
 	sDataLen := numFaces * numShapes * shapeLen
 	sDataPtr := unsafe.Pointer(ret.shapes)
-	sData := (*[1 << 30]C.long)(sDataPtr)[:sDataLen:sDataLen]
+	sData := (*[maxElements]C.long)(sDataPtr)[:sDataLen:sDataLen]
 
 	for i := 0; i < numFaces; i++ {
 		face := Face{}
