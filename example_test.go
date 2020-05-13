@@ -16,7 +16,7 @@ const dataDir = "testdata"
 // recognizer, recognize faces, classify them using few known ones.
 func Example_basic() {
 	// Init the recognizer.
-	rec, err := face.NewRecognizer(dataDir)
+	rec, err := face.NewRecognizer(filepath.Join(dataDir, "models"))
 	if err != nil {
 		log.Fatalf("Can't init face recognizer: %v", err)
 	}
@@ -24,7 +24,7 @@ func Example_basic() {
 	defer rec.Close()
 
 	// Test image with 10 faces.
-	testImagePristin := filepath.Join(dataDir, "pristin.jpg")
+	testImagePristin := filepath.Join(dataDir, "images", "pristin.jpg")
 	// Recognize faces on that image.
 	faces, err := rec.RecognizeFile(testImagePristin)
 	if err != nil {
@@ -53,7 +53,7 @@ func Example_basic() {
 	rec.SetSamples(samples, cats)
 
 	// Now let's try to classify some not yet known image.
-	testImageNayoung := filepath.Join(dataDir, "nayoung.jpg")
+	testImageNayoung := filepath.Join(dataDir, "images", "nayoung.jpg")
 	nayoungFace, err := rec.RecognizeSingleFile(testImageNayoung)
 	if err != nil {
 		log.Fatalf("Can't recognize: %v", err)

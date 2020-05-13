@@ -58,11 +58,11 @@ type TrainData struct {
 }
 
 func getTPath(fname string) string {
-	return filepath.Join("testdata", fname)
+	return filepath.Join("testdata", "images", fname)
 }
 
 func getIdolData() (idata *IdolData, err error) {
-	data, err := ioutil.ReadFile(getTPath("idols.json"))
+	data, err := ioutil.ReadFile(filepath.Join("testdata", "idols.json"))
 	if err != nil {
 		return
 	}
@@ -141,7 +141,7 @@ func TestSerializationError(t *testing.T) {
 
 func TestInit(t *testing.T) {
 	var err error
-	rec, err = face.NewRecognizer("testdata")
+	rec, err = face.NewRecognizer(filepath.Join("testdata", "models"))
 	if err != nil {
 		t.Fatalf("Can't init face recognizer: %v", err)
 	}

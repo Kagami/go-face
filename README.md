@@ -57,16 +57,12 @@ process.
 
 Currently `shape_predictor_5_face_landmarks.dat`, `mmod_human_face_detector.dat` and
 `dlib_face_recognition_resnet_model_v1.dat` are required. You may download them
-from [dlib-models](https://github.com/davisking/dlib-models) repo:
+from [go-face-testdata](https://github.com/Kagami/go-face-testdata) repo:
 
 ```bash
-mkdir models && cd models
-wget https://github.com/davisking/dlib-models/raw/master/shape_predictor_5_face_landmarks.dat.bz2
-bunzip2 shape_predictor_5_face_landmarks.dat.bz2
-wget https://github.com/davisking/dlib-models/raw/master/dlib_face_recognition_resnet_model_v1.dat.bz2
-bunzip2 dlib_face_recognition_resnet_model_v1.dat.bz2
-wget https://github.com/davisking/dlib-models/raw/master/mmod_human_face_detector.dat.bz2
-bunzip2 mmod_human_face_detector.dat.bz2
+wget https://github.com/Kagami/go-face-testdata/raw/master/models/shape_predictor_5_face_landmarks.dat
+wget https://github.com/Kagami/go-face-testdata/raw/master/models/dlib_face_recognition_resnet_model_v1.dat
+wget https://github.com/Kagami/go-face-testdata/raw/master/models/mmod_human_face_detector.dat
 ```
 
 ## Usage
