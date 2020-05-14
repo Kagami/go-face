@@ -51,6 +51,11 @@ void facerec_set_cnn(facerec* rec, const char *file) {
 	cls->setCNN(file);
 }
 
+void facerec_set_custom(facerec* rec, const char *file) {
+	FaceRec* cls = (FaceRec*)(rec->cls);
+	cls->setCustom(file);
+}
+
 void facerec_set_shape(facerec* rec, const char *file) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	cls->setShape(file);

@@ -26,6 +26,7 @@ private:
     
 	anet_type net_;
 	cnn_anet_type cnn_net_;
+    custom_anet_type custom_cnn_net_;
     agender_type gender_net_;
     apredictor_t age_net_;
     
@@ -42,6 +43,7 @@ public:
 	FaceRec();
     
     void setCNN(const char*);
+    void setCustom(const char*);
     void setShape(const char*);
     void setDescriptor(const char*);
     void setGender(const char*);

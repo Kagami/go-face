@@ -33,6 +33,12 @@ template <typename SUBNET> using alevel4 = ares<32,ares<32,ares<32,SUBNET>>>;
 
 template <long num_filters, typename SUBNET> using con5d = con<num_filters,5,5,2,2,SUBNET>;
 template <long num_filters, typename SUBNET> using con5  = con<num_filters,5,5,1,1,SUBNET>;
+template <long num_filters, typename SUBNET> using con3  = con<num_filters,3,3,1,1,SUBNET>;
+
+
+template <typename SUBNET> using downsampler_  = relu<bn_con<con5d<32, relu<bn_con<con5d<32, relu<bn_con<con5d<32,SUBNET>>>>>>>>>;
+template <typename SUBNET> using rcon3  = relu<bn_con<con3<32,SUBNET>>>;
+using custom_anet_type  = loss_mmod<con<1,6,6,1,1,rcon3<rcon3<rcon3<downsampler_<input_rgb_image_pyramid<pyramid_down<6>>>>>>>>;
 
 template <typename SUBNET> using downsampler  = relu<affine<con5d<32, relu<affine<con5d<32, relu<affine<con5d<16,SUBNET>>>>>>>>>;
 template <typename SUBNET> using rcon5  = relu<affine<con5<45,SUBNET>>>;

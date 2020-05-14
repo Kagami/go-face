@@ -19,6 +19,10 @@ void FaceRec::setCNN(const char* cnn_resnet_path) {
     deserialize(std::string(cnn_resnet_path)) >> cnn_net_;
 }
 
+void FaceRec::setCustom(const char* cnn_resnet_path) {
+    deserialize(std::string(cnn_resnet_path)) >> custom_cnn_net_;
+}
+
 void FaceRec::setShape(const char* shape_predictor_path) {
     deserialize(std::string(shape_predictor_path)) >> sp_;
 }
@@ -63,8 +67,13 @@ facesret* FaceRec::detect(facesret *ret, image_t &img, int type) {
 
     if (type == 0 ) {
         rects = detector_(img);
-    } else {
+    } else if (type == 1) {
         auto dets = cnn_net_(img);
+        for (auto&& d : dets) {
+            rects.push_back(d.rect);
+        }
+    } else if (type == 2) {
+        auto dets = custom_cnn_net_(img);
         for (auto&& d : dets) {
             rects.push_back(d.rect);
         }

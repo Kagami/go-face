@@ -57,6 +57,7 @@ int facerec_get_gender(facerec* rec, image_pointer *);
 int facerec_get_age(facerec* rec, image_pointer *);
 
 void facerec_set_cnn(facerec* , const char *);
+void facerec_set_custom(facerec* , const char *);
 void facerec_set_shape(facerec* , const char *);
 void facerec_set_descriptor(facerec* , const char *);
 void facerec_set_gender(facerec* , const char *);

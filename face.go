@@ -119,6 +119,17 @@ func (rec *Recognizer) SetCNNModel(cnnResnetPath string) (err error) {
 	return
 }
 
+func (rec *Recognizer) SetCustomModel(cnnResnetPath string) (err error) {
+	if !fileExists(cnnResnetPath) {
+		err = errors.New(fmt.Sprintf("File '%s' not found!", cnnResnetPath))
+		return
+	}
+	cCnnResnetPath := C.CString(cnnResnetPath)
+	defer C.free(unsafe.Pointer(cCnnResnetPath))
+	C.facerec_set_custom(rec.ptr, cCnnResnetPath)
+	return
+}
+
 func (rec *Recognizer) SetGenderModel(genderPath string) (err error) {
 	if !fileExists(genderPath) {
 		err = errors.New(fmt.Sprintf("File '%s' not found!", genderPath))
@@ -261,6 +272,10 @@ func (rec *Recognizer) DetectFromBufferCNN(imgData []byte) (faces []Face, err er
 	return rec.detectFromBuffer(1, imgData)
 }
 
+func (rec *Recognizer) DetectFromBufferCustom(imgData []byte) (faces []Face, err error) {
+	return rec.detectFromBuffer(2, imgData)
+}
+
 // Same as Recognize but accepts image path instead.
 func (rec *Recognizer) DetectFromFile(imgPath string) (faces []Face, err error) {
 	return rec.detectFromFile(0, imgPath)
@@ -268,6 +283,10 @@ func (rec *Recognizer) DetectFromFile(imgPath string) (faces []Face, err error) 
 
 func (rec *Recognizer) DetectFromFileCNN(imgPath string) (faces []Face, err error) {
 	return rec.detectFromFile(1, imgPath)
+}
+
+func (rec *Recognizer) DetectFromFileCustom(imgPath string) (faces []Face, err error) {
+	return rec.detectFromFile(2, imgPath)
 }
 
 func (rec *Recognizer) GetGender(face *Face) {
