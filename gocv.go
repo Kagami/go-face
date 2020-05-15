@@ -66,6 +66,10 @@ func (rec *Recognizer) DetectFromMatCNN(mat gocv.Mat) (faces []Face, err error) 
 	return rec.detectFromMat(1, mat)
 }
 
+func (rec *Recognizer) DetectFromMatCustom(mat gocv.Mat) (faces []Face, err error) {
+	return rec.detectFromMat(2, mat)
+}
+
 func RenderFaceDetections(img *gocv.Mat, Shapes []image.Point, col color.RGBA, thickness int) {
 	if len(Shapes) == 5 {
 		gocv.Line(img, Shapes[0], Shapes[1], col, thickness)
