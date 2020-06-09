@@ -127,3 +127,27 @@ func RenderFaceDetections(img *gocv.Mat, Shapes []image.Point, col color.RGBA, t
 		gocv.Line(img, Shapes[60], Shapes[67], col, thickness)
 	}
 }
+
+func (tracker *Tracker) StartMat(mat gocv.Mat, rect image.Rectangle) (err error) {
+	ret := C.start_track_from_mat(tracker.ptr, unsafe.Pointer(mat.Ptr()), C.int(rect.Min.X), C.int(rect.Min.Y), C.int(rect.Max.X), C.int(rect.Max.Y))
+	defer C.free(unsafe.Pointer(ret))
+
+	if ret.err_str != nil {
+		defer C.free(unsafe.Pointer(ret.err_str))
+		err = makeError(C.GoString(ret.err_str), int(ret.err_code))
+		return
+	}
+	return
+}
+
+func (tracker *Tracker) UpdateMat(mat gocv.Mat) (err error) {
+	ret := C.update_track_from_mat(tracker.ptr, unsafe.Pointer(mat.Ptr()))
+	defer C.free(unsafe.Pointer(ret))
+
+	if ret.err_str != nil {
+		defer C.free(unsafe.Pointer(ret.err_str))
+		err = makeError(C.GoString(ret.err_str), int(ret.err_code))
+		return
+	}
+	return
+}

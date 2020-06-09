@@ -7,9 +7,25 @@
 #include <dlib/graph_utils.h>
 #include <dlib/image_io.h>
 #include "facerec.h"
+#include "tracker.h"
 #include "classify.h"
 
 using namespace dlib;
+
+tracker* tracker_init() {
+	tracker* tr = (tracker*)calloc(1, sizeof(tracker));
+	try {
+		Tracker* cls = new Tracker();
+		tr->cls = (void*)cls;
+	} catch(serialization_error& e) {
+		tr->err_str = strdup(e.what());
+		tr->err_code = SERIALIZATION_ERROR;
+	} catch (std::exception& e) {
+		tr->err_str = strdup(e.what());
+		tr->err_code = UNKNOWN_ERROR;
+	}
+	return tr;
+}
 
 facerec* facerec_init() {
 	facerec* rec = (facerec*)calloc(1, sizeof(facerec));
@@ -74,6 +90,101 @@ void facerec_set_gender(facerec* rec, const char *file) {
 void facerec_set_age(facerec* rec, const char *file) {
 	FaceRec* cls = (FaceRec*)(rec->cls);
 	cls->setAge(file);
+}
+
+facesret* start_track_from_file(tracker* tr, const char* file,int x1, int y1, int x2, int y2) {
+    Tracker* cls = (Tracker*)(tr->cls);
+	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
+	image_t img;
+    
+    	try {
+		// TODO(Kagami): Support more file types?
+        // Danil_e71: support png, gif, bmp, jpg from file
+        load_image(img,file);
+        cls->StartTrack(img,rectangle(x1,y1,x2,y2));
+	} catch(image_load_error& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = IMAGE_LOAD_ERROR;
+		return ret;
+	} catch (std::exception& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = UNKNOWN_ERROR;
+		return ret;
+	}
+
+    return ret;
+}
+
+facesret* start_track_from_buffer(tracker* tr, unsigned char* img_data, int len,int x1, int y1, int x2, int y2) {
+    Tracker* cls = (Tracker*)(tr->cls);
+	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
+	image_t img;
+
+    	try {
+		// TODO(Kagami): Support more file types?
+		load_jpeg(img, img_data, size_t(len));
+        cls->StartTrack(img,rectangle(x1,y1,x2,y2));
+	} catch(image_load_error& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = IMAGE_LOAD_ERROR;
+		return ret;
+	} catch (std::exception& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = UNKNOWN_ERROR;
+		return ret;
+	}
+
+    return ret;
+}
+
+facesret* update_track_from_file(tracker* tr, const char* file) {
+    Tracker* cls = (Tracker*)(tr->cls);
+	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
+	image_t img;
+    
+    	try {
+		// TODO(Kagami): Support more file types?
+        // Danil_e71: support png, gif, bmp, jpg from file
+        load_image(img,file);
+        cls->Update(img);
+	} catch(image_load_error& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = IMAGE_LOAD_ERROR;
+		return ret;
+	} catch (std::exception& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = UNKNOWN_ERROR;
+		return ret;
+	}
+
+    return ret;
+}
+
+facesret* update_track_from_buffer(tracker* tr, unsigned char* img_data, int len) {
+    Tracker* cls = (Tracker*)(tr->cls);
+	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
+	image_t img;
+
+    	try {
+		// TODO(Kagami): Support more file types?
+		load_jpeg(img, img_data, size_t(len));
+        cls->Update(img);
+	} catch(image_load_error& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = IMAGE_LOAD_ERROR;
+		return ret;
+	} catch (std::exception& e) {
+		ret->err_str = strdup(e.what());
+		ret->err_code = UNKNOWN_ERROR;
+		return ret;
+	}
+
+    return ret;
+}
+
+tracker_ret* get_track_position(tracker* tr) {
+    Tracker* cls = (Tracker*)(tr->cls);   
+    return cls->Position();
 }
 
 facesret* facerec_detect_from_file(facerec* rec, const char* file,int type) {
@@ -190,6 +301,17 @@ void facerec_free(facerec* rec) {
 			rec->cls = NULL;
 		}
 		free(rec);
+	}
+}
+
+void tracker_free(tracker* tr) {
+	if (tr) {
+		if (tr->cls) {
+			Tracker* cls = (Tracker*)(tr->cls);
+			delete cls;
+			tr->cls = NULL;
+		}
+		free(tr);
 	}
 }
 

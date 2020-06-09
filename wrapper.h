@@ -21,6 +21,19 @@ typedef struct facerec {
 	double padding;
 } facerec;
 
+
+typedef struct tracker {
+	void* cls;
+	const char* err_str;
+	err_code err_code;
+} tracker;
+
+typedef struct tracker_ret {
+	long* rectangles;
+	const char* err_str;
+	err_code err_code;
+} tracker_ret;
+
 typedef struct image_pointer {
     void *img;
     void *shape;
@@ -48,6 +61,13 @@ typedef struct faceret {
 #define DESCR_LEN  128
 #define SHAPE_LEN  2
 
+tracker* tracker_init();
+facesret* start_track_from_file(tracker* tr, const char* file,int x1, int y1, int x2, int y2);
+facesret* start_track_from_buffer(tracker* tr, unsigned char* img_data, int len,int x1, int y1, int x2, int y2);
+facesret* update_track_from_file(tracker* tr, const char* file);
+facesret* update_track_from_buffer(tracker* tr, unsigned char* img_data, int len);
+tracker_ret* get_track_position(tracker* tr);
+
 facerec* facerec_init();
 facesret* facerec_detect_from_file(facerec*, const char*,int);
 facesret* facerec_detect_from_buffer(facerec*, unsigned char*, int, int);
@@ -66,6 +86,7 @@ void facerec_set_age(facerec* , const char *);
 void facerec_set_samples(facerec*, const float*, const int32_t*, int);
 int facerec_classify(facerec*, const float*, float);
 void facerec_free(facerec*);
+void tracker_free(tracker*);
 
 void facerec_config_set_size(facerec* rec, unsigned long size);
 void facerec_config_set_padding(facerec* rec, double padding);
