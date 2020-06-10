@@ -9,6 +9,7 @@ package face
 // #include "tracker.h"
 import "C"
 import (
+	"fmt"
 	"image"
 	"unsafe"
 )
