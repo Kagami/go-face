@@ -75,9 +75,9 @@ facesret* start_track_from_mat(tracker* tr, const void *mat,int x1, int y1, int 
     return ret;
 }
 
-facesret* update_track_from_mat(tracker* tr, const void *mat) {
+update_ret* update_track_from_mat(tracker* tr, const void *mat) {
     Tracker* cls = (Tracker*)(tr->cls);
-	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
+	update_ret* ret = (update_ret*)calloc(1, sizeof(update_ret));
 	image_t img;
 
 	try {
@@ -95,7 +95,7 @@ facesret* update_track_from_mat(tracker* tr, const void *mat) {
             assign_image(img, dlib_img);
         }
         
-        cls->Update(img);
+        ret->confidence = cls->Update(img);
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;

@@ -140,7 +140,7 @@ func (tracker *Tracker) StartMat(mat gocv.Mat, rect image.Rectangle) (err error)
 	return
 }
 
-func (tracker *Tracker) UpdateMat(mat gocv.Mat) (err error) {
+func (tracker *Tracker) UpdateMat(mat gocv.Mat) (confidence float32, err error) {
 	ret := C.update_track_from_mat(tracker.ptr, unsafe.Pointer(mat.Ptr()))
 	defer C.free(unsafe.Pointer(ret))
 
@@ -149,5 +149,8 @@ func (tracker *Tracker) UpdateMat(mat gocv.Mat) (err error) {
 		err = makeError(C.GoString(ret.err_str), int(ret.err_code))
 		return
 	}
+
+	confidence = float32(ret.confidence)
+
 	return
 }

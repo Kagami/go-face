@@ -34,6 +34,12 @@ typedef struct tracker_ret {
 	err_code err_code;
 } tracker_ret;
 
+typedef struct update_ret {
+    double confidence;
+	const char* err_str;
+	err_code err_code;
+} update_ret;
+
 typedef struct image_pointer {
     void *img;
     void *shape;
@@ -64,8 +70,8 @@ typedef struct faceret {
 tracker* tracker_init();
 facesret* start_track_from_file(tracker* tr, const char* file,int x1, int y1, int x2, int y2);
 facesret* start_track_from_buffer(tracker* tr, unsigned char* img_data, int len,int x1, int y1, int x2, int y2);
-facesret* update_track_from_file(tracker* tr, const char* file);
-facesret* update_track_from_buffer(tracker* tr, unsigned char* img_data, int len);
+update_ret* update_track_from_file(tracker* tr, const char* file);
+update_ret* update_track_from_buffer(tracker* tr, unsigned char* img_data, int len);
 tracker_ret* get_track_position(tracker* tr);
 
 facerec* facerec_init();

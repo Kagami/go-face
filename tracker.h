@@ -18,7 +18,7 @@ private:
 public:
 	Tracker();
     void StartTrack(image_t &,rectangle);
-    void Update(image_t &img);
+    double Update(image_t &img);
     tracker_ret *Position();
 };
 

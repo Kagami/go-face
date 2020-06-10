@@ -18,8 +18,8 @@ void Tracker::StartTrack(image_t &img, rectangle rect) {
 }
 
 
-void Tracker::Update(image_t &img) {
-    tracker.update(img);
+double Tracker::Update(image_t &img) {
+    return tracker.update(img);
 }
 
 tracker_ret *Tracker::Position() {

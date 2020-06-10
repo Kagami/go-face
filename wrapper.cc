@@ -137,16 +137,16 @@ facesret* start_track_from_buffer(tracker* tr, unsigned char* img_data, int len,
     return ret;
 }
 
-facesret* update_track_from_file(tracker* tr, const char* file) {
+update_ret* update_track_from_file(tracker* tr, const char* file) {
     Tracker* cls = (Tracker*)(tr->cls);
-	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
+	update_ret* ret = (update_ret*)calloc(1, sizeof(update_ret));
 	image_t img;
     
     	try {
 		// TODO(Kagami): Support more file types?
         // Danil_e71: support png, gif, bmp, jpg from file
         load_image(img,file);
-        cls->Update(img);
+        ret->confidence = cls->Update(img);
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;
@@ -160,15 +160,15 @@ facesret* update_track_from_file(tracker* tr, const char* file) {
     return ret;
 }
 
-facesret* update_track_from_buffer(tracker* tr, unsigned char* img_data, int len) {
+update_ret* update_track_from_buffer(tracker* tr, unsigned char* img_data, int len) {
     Tracker* cls = (Tracker*)(tr->cls);
-	facesret* ret = (facesret*)calloc(1, sizeof(facesret));
+	update_ret* ret = (update_ret*)calloc(1, sizeof(update_ret));
 	image_t img;
 
     	try {
 		// TODO(Kagami): Support more file types?
 		load_jpeg(img, img_data, size_t(len));
-        cls->Update(img);
+        ret->confidence = cls->Update(img);
 	} catch(image_load_error& e) {
 		ret->err_str = strdup(e.what());
 		ret->err_code = IMAGE_LOAD_ERROR;

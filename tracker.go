@@ -55,3 +55,91 @@ func (tracker *Tracker) Position() (rect image.Rectangle, err error) {
 	rect = image.Rect(x0, y0, x1, y1)
 	return
 }
+
+func (tracker *Tracker) StartFile(file string, rect image.Rectangle) (err error) {
+	if !fileExists(file) {
+		err = ImageLoadError(fmt.Sprintf("File '%s' not found!", file))
+		return
+	}
+
+	cFile := C.CString(file)
+	defer C.free(unsafe.Pointer(cFile))
+
+	ret := C.start_track_from_file(tracker.ptr, cFile, C.int(rect.Min.X), C.int(rect.Min.Y), C.int(rect.Max.X), C.int(rect.Max.Y))
+	defer C.free(unsafe.Pointer(ret))
+
+	if ret.err_str != nil {
+		defer C.free(unsafe.Pointer(ret.err_str))
+		err = makeError(C.GoString(ret.err_str), int(ret.err_code))
+		return
+	}
+	return
+}
+
+func (tracker *Tracker) UpdateFile(file string) (confidence float32, err error) {
+	if !fileExists(file) {
+		err = ImageLoadError(fmt.Sprintf("File '%s' not found!", file))
+		return
+	}
+
+	cFile := C.CString(file)
+	defer C.free(unsafe.Pointer(cFile))
+	ret := C.update_track_from_file(tracker.ptr, cFile)
+	defer C.free(unsafe.Pointer(ret))
+
+	if ret.err_str != nil {
+		defer C.free(unsafe.Pointer(ret.err_str))
+		err = makeError(C.GoString(ret.err_str), int(ret.err_code))
+		return
+	}
+
+	confidence = float32(ret.confidence)
+
+	return
+}
+
+func (tracker *Tracker) StartBuffer(imgData []byte, rect image.Rectangle) (err error) {
+	if len(imgData) == 0 {
+		err = ImageLoadError("Empty image")
+		return
+	}
+	cImgData := (*C.uchar)(&imgData[0])
+	cLen := C.int(len(imgData))
+
+	ret := C.start_track_from_buffer(tracker.ptr, cImgData, cLen, C.int(rect.Min.X), C.int(rect.Min.Y), C.int(rect.Max.X), C.int(rect.Max.Y))
+	defer C.free(unsafe.Pointer(ret))
+
+	if ret.err_str != nil {
+		defer C.free(unsafe.Pointer(ret.err_str))
+		err = makeError(C.GoString(ret.err_str), int(ret.err_code))
+		return
+	}
+	return
+}
+
+func (tracker *Tracker) UpdateBuffer(imgData []byte) (confidence float32, err error) {
+	if len(imgData) == 0 {
+		err = ImageLoadError("Empty image")
+		return
+	}
+	cImgData := (*C.uchar)(&imgData[0])
+	cLen := C.int(len(imgData))
+
+	ret := C.update_track_from_buffer(tracker.ptr, cImgData, cLen)
+	defer C.free(unsafe.Pointer(ret))
+
+	if ret.err_str != nil {
+		defer C.free(unsafe.Pointer(ret.err_str))
+		err = makeError(C.GoString(ret.err_str), int(ret.err_code))
+		return
+	}
+
+	confidence = float32(ret.confidence)
+
+	return
+}
+
+func (tracker *Tracker) Close() {
+	C.tracker_free(tracker.ptr)
+	tracker.ptr = nil
+}
