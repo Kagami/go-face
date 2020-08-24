@@ -98,11 +98,16 @@ import (
 // points to the <https://github.com/Kagami/go-face-testdata> clone.
 const dataDir = "testdata"
 
+var (
+	modelsDir = filepath.Join(dataDir, "models")
+	imagesDir = filepath.Join(dataDir, "images")
+)
+
 // This example shows the basic usage of the package: create an
 // recognizer, recognize faces, classify them using few known ones.
 func main() {
 	// Init the recognizer.
-	rec, err := face.NewRecognizer(dataDir)
+	rec, err := face.NewRecognizer(modelsDir)
 	if err != nil {
 		log.Fatalf("Can't init face recognizer: %v", err)
 	}
@@ -110,7 +115,7 @@ func main() {
 	defer rec.Close()
 
 	// Test image with 10 faces.
-	testImagePristin := filepath.Join(dataDir, "pristin.jpg")
+	testImagePristin := filepath.Join(imagesDir, "pristin.jpg")
 	// Recognize faces on that image.
 	faces, err := rec.RecognizeFile(testImagePristin)
 	if err != nil {
@@ -139,7 +144,7 @@ func main() {
 	rec.SetSamples(samples, cats)
 
 	// Now let's try to classify some not yet known image.
-	testImageNayoung := filepath.Join(dataDir, "nayoung.jpg")
+	testImageNayoung := filepath.Join(imagesDir, "nayoung.jpg")
 	nayoungFace, err := rec.RecognizeSingleFile(testImageNayoung)
 	if err != nil {
 		log.Fatalf("Can't recognize: %v", err)
