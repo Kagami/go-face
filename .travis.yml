@@ -1,19 +1,14 @@
-dist: xenial
-sudo: required
+dist: focal
 language: go
 go:
   - "stable"
 addons:
   apt:
-    sources:
-      - sourceline: "ppa:ubuntu-toolchain-r/test"
-      - sourceline: "ppa:kagamih/dlib"
     packages:
-      - g++-7
       - libdlib-dev
+      - libblas-dev
+      - liblapack-dev
       - libjpeg-turbo8-dev
-env:
-  - CXX=g++-7
 notifications:
   email:
     on_success: never
