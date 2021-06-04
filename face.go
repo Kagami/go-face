@@ -80,6 +80,9 @@ func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
 
 func NewRecognizerWithConfig(modelDir string, size int, padding float32, jittering int) (rec *Recognizer, err error) {
 	rec, err = NewRecognizer(modelDir)
+	if err != nil {
+		return
+	}
 	cSize := C.ulong(size)
 	cPadding := C.double(padding)
 	cJittering := C.int(jittering)
