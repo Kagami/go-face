@@ -158,6 +158,7 @@ func (rec *Recognizer) recognizeFile(type_ int, imgPath string, maxFaces int) (f
 	if err != nil {
 		return
 	}
+	defer fd.Close()
 	imgData, err := ioutil.ReadAll(fd)
 	if err != nil {
 		return
