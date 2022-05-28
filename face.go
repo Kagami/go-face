@@ -1,6 +1,8 @@
 package face
 
-// #cgo CXXFLAGS: -std=c++1z -Wall -O3 -DNDEBUG -march=native
+// #cgo CXXFLAGS: -std=c++1z -Wall -O3 -DNDEBUG
+// #cgo !(darwin && arm64) CXXFLAGS: -march=native
+// #cgo darwin && arm64 CXXFLAGS: -mcpu=apple-m1
 // #cgo LDFLAGS: -ldlib -lblas -lcblas -llapack -ljpeg
 // #include <stdlib.h>
 // #include <stdint.h>
