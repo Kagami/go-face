@@ -16,7 +16,7 @@ const dataDir = "testdata"
 // recognizer, recognize faces, classify them using few known ones.
 func Example_basic() {
 	// Init the recognizer.
-	rec, err := face.NewRecognizer(filepath.Join(dataDir, "models"))
+	rec, err := face.NewRecognizer(filepath.Join(dataDir, "models"), false)
 	if err != nil {
 		log.Fatalf("Can't init face recognizer: %v", err)
 	}

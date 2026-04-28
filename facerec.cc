@@ -59,11 +59,13 @@ static std::vector<matrix<rgb_pixel>> jitter_image(
 
 class FaceRec {
 public:
-	FaceRec(const char* model_dir) {
+	FaceRec(const char* model_dir, bool is_fine_shape_predictor) {
 		detector_ = get_frontal_face_detector();
 
 		std::string dir = model_dir;
-		std::string shape_predictor_path = dir + "/shape_predictor_5_face_landmarks.dat";
+		std::string shape_predictor_path = (is_fine_shape_predictor) ?
+			dir + "/shape_predictor_68_face_landmarks.dat" :
+			dir + "/shape_predictor_5_face_landmarks.dat";
 		std::string resnet_path = dir + "/dlib_face_recognition_resnet_model_v1.dat";
 		std::string cnn_resnet_path = dir + "/mmod_human_face_detector.dat";
 
@@ -149,10 +151,10 @@ private:
 
 // Plain C interface for Go.
 
-facerec* facerec_init(const char* model_dir) {
+facerec* facerec_init(const char* model_dir, bool is_fine_shape_predictor = false) {
 	facerec* rec = (facerec*)calloc(1, sizeof(facerec));
 	try {
-		FaceRec* cls = new FaceRec(model_dir);
+		FaceRec* cls = new FaceRec(model_dir, is_fine_shape_predictor);
 		rec->cls = (void*)cls;
 	} catch(serialization_error& e) {
 		rec->err_str = strdup(e.what());

@@ -130,7 +130,7 @@ func recognizeAndClassify(fpath string, tolerance float32) (id int, err error) {
 }
 
 func TestSerializationError(t *testing.T) {
-	_, err := face.NewRecognizer("/notexist")
+	_, err := face.NewRecognizer("/notexist", false)
 	switch err.(type) {
 	case face.SerializationError:
 		// skip
@@ -141,7 +141,7 @@ func TestSerializationError(t *testing.T) {
 
 func TestInit(t *testing.T) {
 	var err error
-	rec, err = face.NewRecognizer(filepath.Join("testdata", "models"))
+	rec, err = face.NewRecognizer(filepath.Join("testdata", "models"), false)
 	if err != nil {
 		t.Fatalf("Can't init face recognizer: %v", err)
 	}

@@ -62,10 +62,11 @@ func NewWithShape(r image.Rectangle, s []image.Point, d Descriptor) Face {
 // NewRecognizer returns a new recognizer interface. modelDir points to
 // directory with shape_predictor_5_face_landmarks.dat and
 // dlib_face_recognition_resnet_model_v1.dat files.
-func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
+func NewRecognizer(modelDir string, isFineShapePredictor bool) (rec *Recognizer, err error) {
 	cModelDir := C.CString(modelDir)
 	defer C.free(unsafe.Pointer(cModelDir))
-	ptr := C.facerec_init(cModelDir)
+	cFineShapePredictor := C.bool(isFineShapePredictor)
+	ptr := C.facerec_init(cModelDir, cFineShapePredictor)
 
 	if ptr.err_str != nil {
 		defer C.facerec_free(ptr)
@@ -78,8 +79,8 @@ func NewRecognizer(modelDir string) (rec *Recognizer, err error) {
 	return
 }
 
-func NewRecognizerWithConfig(modelDir string, size int, padding float32, jittering int) (rec *Recognizer, err error) {
-	rec, err = NewRecognizer(modelDir)
+func NewRecognizerWithConfig(modelDir string, isFineShapePredictor bool, size int, padding float32, jittering int) (rec *Recognizer, err error) {
+	rec, err = NewRecognizer(modelDir, isFineShapePredictor)
 	if err != nil {
 		return
 	}
